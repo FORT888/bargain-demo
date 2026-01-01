@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>砍一刀 Demo</title>
 
-  <!-- Firebase SDK（必须） -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
@@ -34,10 +34,7 @@
       appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
     };
 
-    // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
-
-    // 初始化 Firestore
     const db = firebase.firestore();
 
     /***********************
@@ -58,7 +55,7 @@
     };
 
     /***********************
-     * ③ 发起助力活动（写入 Firestore）
+     * ③ 发起助力活动
      ***********************/
     document.getElementById('btnCreate').onclick = async () => {
       try {
@@ -70,64 +67,65 @@
         });
 
         document.getElementById('result').innerText =
-          '活动创建成功！activityId：' + docRef.id;
+          '活动创建成功！activityId：' + docRef.id +
+          '\n分享链接：' + location.origin + location.pathname + '?from=' + docRef.id;
       } catch (e) {
         alert('创建失败，请检查 Firebase 配置');
         console.error(e);
       }
     };
+
+    /***********************
+     * ④ 处理助力（朋友点进来）
+     ***********************/
+    const params = new URLSearchParams(window.location.search);
+    const fromActivityId = params.get('from');
+
+    if (fromActivityId) {
+      handleHelp(fromActivityId);
+    }
+
+    async function handleHelp(activityId) {
+      const activityRef = db.collection('activities').doc(activityId);
+      const activitySnap = await activityRef.get();
+
+      if (!activitySnap.exists) {
+        alert('活动不存在');
+        return;
+      }
+
+      const ownerId = activitySnap.data().owner;
+
+      // 自己不能帮自己
+      if (ownerId === uid) return;
+
+      // 是否已经帮过
+      const helped = await db.collection('helps')
+        .where('activityId', '==', activityId)
+        .where('helper', '==', uid)
+        .get();
+
+      if (!helped.empty) {
+        alert('你已经帮过这个活动了');
+        return;
+      }
+
+      // 记录助力
+      await db.collection('helps').add({
+        activityId,
+        owner: ownerId,
+        helper: uid,
+        createdAt: Date.now()
+      });
+
+      // +1 刀
+      await activityRef.update({
+        knives: firebase.firestore.FieldValue.increment(1)
+      });
+
+      alert('助力成功！已帮 TA 砍一刀 🔪');
+    }
   </script>
 
-  /***********************
-   * ④ 处理助力（朋友点进来）
-   ***********************/
-  const params = new URLSearchParams(window.location.search);
-  const fromActivityId = params.get('from');
-
-  if (fromActivityId) {
-    handleHelp(fromActivityId);
-  }
-
-  async function handleHelp(activityId) {
-    // 防止自己帮自己
-    const activityRef = db.collection('activities').doc(activityId);
-    const activitySnap = await activityRef.get();
-
-    if (!activitySnap.exists) {
-      alert('活动不存在');
-      return;
-    }
-
-    const ownerId = activitySnap.data().owner;
-
-    if (ownerId === uid) {
-      return; // 自己点自己，不处理
-    }
-
-    // 查询是否已经帮过
-    const helpQuery = await db.collection('helps')
-      .where('activityId', '==', activityId)
-      .where('helper', '==', uid)
-      .get();
-
-    if (!helpQuery.empty) {
-      alert('你已经帮过这个活动了');
-      return;
-    }
-
-    // 记录助力
-    await db.collection('helps').add({
-      activityId: activityId,
-      owner: ownerId,
-      helper: uid,
-      createdAt: Date.now()
-    });
-
-    // 给活动 +1 刀
-    await activityRef.update({
-      knives: firebase.firestore.FieldValue.increment(1)
-    });
-
-    alert('助力成功！已帮 TA 砍一刀 🔪');
-  }
-</script>
+</body>
+</html>
