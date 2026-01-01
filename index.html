@@ -2,6 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
   <title>联信资 · 助力活动</title>
 
   <!-- Firebase SDK -->
@@ -13,20 +17,25 @@
       box-sizing: border-box;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
         Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html, body {
+      width: 100%;
       height: 100%;
       margin: 0;
+      padding: 0;
+      overflow: hidden;
+      position: fixed;        /* 🔒 关键 */
+      touch-action: none;     /* 🔒 关键 */
       overscroll-behavior: none;
+      background: #f6f8fb;
     }
 
     body {
-      background: #f6f8fb;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
       color: #111827;
     }
 
@@ -34,21 +43,22 @@
       width: 92%;
       max-width: 420px;
       background: #ffffff;
-      border-radius: 20px;
-      padding: 32px 28px 36px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      border-radius: 24px;
+      padding: 36px 28px 40px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
 
+    /* 🔥 LOGO 放大 */
     .logo {
-      width: 96px;
-      margin: 0 auto 14px;
+      width: 140px;           /* 比之前大很多 */
+      margin: 0 auto 18px;
       display: block;
     }
 
     h1 {
       font-size: 22px;
-      margin: 6px 0;
+      margin: 8px 0 6px;
       font-weight: 600;
     }
 
@@ -61,7 +71,7 @@
     .info {
       font-size: 13px;
       color: #374151;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       word-break: break-all;
     }
 
@@ -69,46 +79,36 @@
       font-size: 18px;
       font-weight: 600;
       color: #2563eb;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
     }
 
     .btn {
       width: 100%;
       border: none;
-      border-radius: 14px;
-      padding: 14px 0;
-      font-size: 15px;
+      border-radius: 16px;
+      padding: 15px 0;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      margin-top: 12px;
+      margin-top: 14px;
       background: #2563eb;
       color: #ffffff;
-      transition: background 0.15s ease, transform 0.15s ease;
     }
 
-    .btn:hover {
-      background: #1d4ed8;
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    .secondary {
-      background: #ffffff;
+    .btn.secondary {
+      background: #eef2ff;
       color: #2563eb;
-      border: 1px solid #e5e7eb;
     }
 
     .result {
       font-size: 13px;
       color: #2563eb;
-      margin-top: 16px;
+      margin-top: 18px;
       white-space: pre-line;
     }
 
     .footer {
-      margin-top: 26px;
+      margin-top: 28px;
       font-size: 11px;
       color: #9ca3af;
     }
@@ -117,7 +117,8 @@
 <body>
 
   <div class="card">
-    <img src="logo.png" class="logo" alt="logo" />
+    <!-- LOGO -->
+    <img src="logo.png" class="logo" />
 
     <h1>联信资 · 助力活动</h1>
     <div class="sub">品牌曝光 · 限量实物奖励</div>
@@ -125,8 +126,15 @@
     <div id="uidText" class="info"></div>
     <div id="countText" class="count">已砍：0 / 1000</div>
 
-    <button class="btn secondary" id="btnUid">查看我的身份</button>
-    <button class="btn" id="btnCreate">发起砍一刀</button>
+    <!-- 按钮 1：帮好友砍一刀 -->
+    <button class="btn secondary" id="btnHelp">
+      帮好友砍一刀
+    </button>
+
+    <!-- 按钮 2：发起砍一刀 -->
+    <button class="btn" id="btnCreate">
+      发起砍一刀
+    </button>
 
     <div id="result" class="result"></div>
 
@@ -147,33 +155,48 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    /******** userId ********/
-    let uid = localStorage.getItem("uid");
-    if (!uid) {
-      uid = "u_" + Math.random().toString(36).slice(2);
-      localStorage.setItem("uid", uid);
+    /******** 身份生成（任何按钮都会触发） ********/
+    function ensureUid() {
+      let uid = localStorage.getItem("uid");
+      if (!uid) {
+        uid = "u_" + Math.random().toString(36).slice(2);
+        localStorage.setItem("uid", uid);
+      }
+      document.getElementById("uidText").innerText = "当前身份：" + uid;
+      return uid;
     }
 
-    document.getElementById("uidText").innerText = "当前身份：" + uid;
-    document.getElementById("btnUid").onclick = () => alert(uid);
+    let uid = ensureUid();
 
     /******** URL 参数 ********/
     const params = new URLSearchParams(location.search);
-    const activityId = params.get("from");
+    const fromId = params.get("from");
 
-    if (activityId) {
-      loadActivity(activityId);
-      help(activityId);
-    }
+    /******** 按钮 1：帮好友砍一刀 ********/
+    document.getElementById("btnHelp").onclick = async () => {
+      uid = ensureUid();
 
-    /******** 创建活动 ********/
+      if (!fromId) {
+        alert("请通过好友分享链接进入");
+        return;
+      }
+
+      await help(fromId);
+      loadActivity(fromId);
+    };
+
+    /******** 按钮 2：发起砍一刀 ********/
     document.getElementById("btnCreate").onclick = async () => {
+      uid = ensureUid();
+
       const ref = await db.collection("activities").add({
         owner: uid,
         knives: 0,
         finished: false,
         createdAt: Date.now()
       });
+
+      localStorage.setItem("currentActivityId", ref.id);
 
       document.getElementById("result").innerText =
         "活动已创建\n\n分享链接：\n" +
@@ -197,20 +220,26 @@
       }
     }
 
-    /******** 助力 ********/
+    /******** 助力逻辑 ********/
     async function help(id) {
       const ref = db.collection("activities").doc(id);
       const snap = await ref.get();
       if (!snap.exists) return;
 
-      if (snap.data().owner === uid) return;
+      if (snap.data().owner === uid) {
+        alert("不能帮自己砍");
+        return;
+      }
 
       const helped = await db.collection("helps")
         .where("activityId", "==", id)
         .where("helper", "==", uid)
         .get();
 
-      if (!helped.empty) return;
+      if (!helped.empty) {
+        alert("你已经帮过这个活动了");
+        return;
+      }
 
       await db.collection("helps").add({
         activityId: id,
@@ -223,10 +252,16 @@
         knives: firebase.firestore.FieldValue.increment(1)
       });
 
-      alert("助力成功，已帮 TA 砍一刀！");
-      loadActivity(id);
+      alert("助力成功，已帮好友砍一刀！");
+    }
+
+    /******** 自动加载已有活动 ********/
+    const saved = localStorage.getItem("currentActivityId");
+    if (!fromId && saved) {
+      loadActivity(saved);
     }
   </script>
 
 </body>
 </html>
+
