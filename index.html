@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>砍一刀 Demo</title>
+</head>
+<body>
+
+  <h1>砍一刀 Demo 页面</h1>
+
+  <p id="uid"></p>
+
+  <button id="btn">生成我的 userId</button>
+
+  <script>
+    let uid = localStorage.getItem('uid')
+
+    if (!uid) {
+      uid = 'u_' + Math.random().toString(36).slice(2)
+      localStorage.setItem('uid', uid)
+    }
+
+    document.getElementById('uid').innerText =
+      '我的 userId 是：' + uid
+
+    document.getElementById('btn').onclick = () => {
+      alert('你的 userId：' + uid)
+    }
+  </script>
+
+</body>
+</html>
