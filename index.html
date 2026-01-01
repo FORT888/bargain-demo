@@ -3,29 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <title>砍一刀 Demo</title>
+
+  <!-- Firebase SDK（必须） -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
   <h1>砍一刀 Demo 页面</h1>
 
-  <p id="uid"></p>
+  <p id="uidText"></p>
 
-  <button id="btn">生成我的 userId</button>
+  <button id="btnUid">查看我的 userId</button>
+  <br><br>
+
+  <button id="btnCreate">发起助力活动</button>
+
+  <p id="result"></p>
 
   <script>
-    let uid = localStorage.getItem('uid')
+    /***********************
+     * ① Firebase 配置（只改这里）
+     ***********************/
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
+      authDomain: "cut-demo-e11b9.firebaseapp.com",
+      projectId: "cut-demo-e11b9",
+      storageBucket: "cut-demo-e11b9.firebasestorage.app",
+      messagingSenderId: "1065166593402",
+      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // 初始化 Firestore
+    const db = firebase.firestore();
+
+    /***********************
+     * ② 生成 / 读取 userId
+     ***********************/
+    let uid = localStorage.getItem('uid');
 
     if (!uid) {
-      uid = 'u_' + Math.random().toString(36).slice(2)
-      localStorage.setItem('uid', uid)
+      uid = 'u_' + Math.random().toString(36).slice(2);
+      localStorage.setItem('uid', uid);
     }
 
-    document.getElementById('uid').innerText =
-      '我的 userId 是：' + uid
+    document.getElementById('uidText').innerText =
+      '我的 userId 是：' + uid;
 
-    document.getElementById('btn').onclick = () => {
-      alert('你的 userId：' + uid)
-    }
+    document.getElementById('btnUid').onclick = () => {
+      alert('你的 userId：' + uid);
+    };
+
+    /***********************
+     * ③ 发起助力活动（写入 Firestore）
+     ***********************/
+    document.getElementById('btnCreate').onclick = async () => {
+      try {
+        const docRef = await db.collection('activities').add({
+          owner: uid,
+          knives: 0,
+          finished: false,
+          createdAt: Date.now()
+        });
+
+        document.getElementById('result').innerText =
+          '活动创建成功！activityId：' + docRef.id;
+      } catch (e) {
+        alert('创建失败，请检查 Firebase 配置');
+        console.error(e);
+      }
+    };
   </script>
 
 </body>
