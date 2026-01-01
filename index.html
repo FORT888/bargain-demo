@@ -78,5 +78,56 @@
     };
   </script>
 
-</body>
-</html>
+  /***********************
+   * ④ 处理助力（朋友点进来）
+   ***********************/
+  const params = new URLSearchParams(window.location.search);
+  const fromActivityId = params.get('from');
+
+  if (fromActivityId) {
+    handleHelp(fromActivityId);
+  }
+
+  async function handleHelp(activityId) {
+    // 防止自己帮自己
+    const activityRef = db.collection('activities').doc(activityId);
+    const activitySnap = await activityRef.get();
+
+    if (!activitySnap.exists) {
+      alert('活动不存在');
+      return;
+    }
+
+    const ownerId = activitySnap.data().owner;
+
+    if (ownerId === uid) {
+      return; // 自己点自己，不处理
+    }
+
+    // 查询是否已经帮过
+    const helpQuery = await db.collection('helps')
+      .where('activityId', '==', activityId)
+      .where('helper', '==', uid)
+      .get();
+
+    if (!helpQuery.empty) {
+      alert('你已经帮过这个活动了');
+      return;
+    }
+
+    // 记录助力
+    await db.collection('helps').add({
+      activityId: activityId,
+      owner: ownerId,
+      helper: uid,
+      createdAt: Date.now()
+    });
+
+    // 给活动 +1 刀
+    await activityRef.update({
+      knives: firebase.firestore.FieldValue.increment(1)
+    });
+
+    alert('助力成功！已帮 TA 砍一刀 🔪');
+  }
+</script>
