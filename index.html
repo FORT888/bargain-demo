@@ -15,52 +15,61 @@
         Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
     }
 
-    body {
+    html, body {
+      height: 100%;
       margin: 0;
-      min-height: 100vh;
-      background: radial-gradient(circle at top, #0f1b2e, #05070d);
+      overscroll-behavior: none;
+    }
+
+    body {
+      background: #f6f8fb;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #eaf1ff;
+      overflow: hidden;
+      color: #111827;
     }
 
     .card {
       width: 92%;
       max-width: 420px;
-      background: linear-gradient(180deg, #0e1625, #0a0f1c);
+      background: #ffffff;
       border-radius: 20px;
-      padding: 28px 24px 32px;
-      box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.6),
-        inset 0 0 0 1px rgba(255,255,255,0.05);
+      padding: 32px 28px 36px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
       text-align: center;
     }
 
     .logo {
-      width: 110px;
-      margin: 0 auto 12px;
+      width: 96px;
+      margin: 0 auto 14px;
       display: block;
     }
 
     h1 {
       font-size: 22px;
+      margin: 6px 0;
       font-weight: 600;
-      margin: 6px 0 8px;
-      letter-spacing: 1px;
     }
 
     .sub {
       font-size: 13px;
-      color: #8fa3c7;
-      margin-bottom: 20px;
+      color: #6b7280;
+      margin-bottom: 18px;
     }
 
     .info {
       font-size: 13px;
-      color: #b8c7e6;
-      margin-bottom: 18px;
+      color: #374151;
+      margin-bottom: 12px;
       word-break: break-all;
+    }
+
+    .count {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2563eb;
+      margin-bottom: 18px;
     }
 
     .btn {
@@ -72,30 +81,28 @@
       font-weight: 600;
       cursor: pointer;
       margin-top: 12px;
+      background: #2563eb;
       color: #ffffff;
-      background: linear-gradient(135deg, #2f6bff, #35c6ff);
-      box-shadow:
-        0 10px 30px rgba(53, 140, 255, 0.45);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #1d4ed8;
     }
 
     .btn:active {
       transform: scale(0.97);
-      box-shadow:
-        0 6px 20px rgba(53, 140, 255, 0.35);
     }
 
     .secondary {
-      background: transparent;
-      color: #8fa3c7;
-      box-shadow: none;
-      border: 1px solid rgba(255,255,255,0.12);
-      margin-top: 10px;
+      background: #ffffff;
+      color: #2563eb;
+      border: 1px solid #e5e7eb;
     }
 
     .result {
       font-size: 13px;
-      color: #9fb7ff;
+      color: #2563eb;
       margin-top: 16px;
       white-space: pre-line;
     }
@@ -103,38 +110,31 @@
     .footer {
       margin-top: 26px;
       font-size: 11px;
-      color: #5f6f8f;
+      color: #9ca3af;
     }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <!-- 你的 LOGO -->
-    <img src="logo.png" alt="联信资" class="logo" />
+    <img src="logo.png" class="logo" alt="logo" />
 
     <h1>联信资 · 助力活动</h1>
-    <div class="sub">企业品牌曝光 · 限量实物奖励</div>
+    <div class="sub">品牌曝光 · 限量实物奖励</div>
 
     <div id="uidText" class="info"></div>
+    <div id="countText" class="count">已砍：0 / 1000</div>
 
-    <button class="btn secondary" id="btnUid">
-      查看我的身份
-    </button>
-
-    <button class="btn" id="btnCreate">
-      发起助力活动
-    </button>
+    <button class="btn secondary" id="btnUid">查看我的身份</button>
+    <button class="btn" id="btnCreate">发起砍一刀</button>
 
     <div id="result" class="result"></div>
 
-    <div class="footer">
-      Trust Union Limited ©
-    </div>
+    <div class="footer">Trust Union Limited ©</div>
   </div>
 
   <script>
-    /******** Firebase 配置（只改这里） ********/
+    /******** Firebase 配置 ********/
     const firebaseConfig = {
       apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
       authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -154,16 +154,21 @@
       localStorage.setItem("uid", uid);
     }
 
-    document.getElementById("uidText").innerText =
-      "当前身份：" + uid;
+    document.getElementById("uidText").innerText = "当前身份：" + uid;
+    document.getElementById("btnUid").onclick = () => alert(uid);
 
-    document.getElementById("btnUid").onclick = () => {
-      alert("你的身份 ID：\n" + uid);
-    };
+    /******** URL 参数 ********/
+    const params = new URLSearchParams(location.search);
+    const activityId = params.get("from");
+
+    if (activityId) {
+      loadActivity(activityId);
+      help(activityId);
+    }
 
     /******** 创建活动 ********/
     document.getElementById("btnCreate").onclick = async () => {
-      const docRef = await db.collection("activities").add({
+      const ref = await db.collection("activities").add({
         owner: uid,
         knives: 0,
         finished: false,
@@ -171,41 +176,45 @@
       });
 
       document.getElementById("result").innerText =
-        "活动创建成功\n\n分享链接：\n" +
-        location.origin +
-        location.pathname +
-        "?from=" +
-        docRef.id;
+        "活动已创建\n\n分享链接：\n" +
+        location.origin + location.pathname + "?from=" + ref.id;
+
+      loadActivity(ref.id);
     };
 
-    /******** 助力逻辑 ********/
-    const params = new URLSearchParams(window.location.search);
-    const from = params.get("from");
+    /******** 加载活动 ********/
+    async function loadActivity(id) {
+      const snap = await db.collection("activities").doc(id).get();
+      if (!snap.exists) return;
 
-    if (from) handleHelp(from);
+      const knives = snap.data().knives;
+      document.getElementById("countText").innerText =
+        "已砍：" + knives + " / 1000";
 
-    async function handleHelp(activityId) {
-      const ref = db.collection("activities").doc(activityId);
+      if (knives >= 1000) {
+        document.getElementById("result").innerText =
+          "🎉 恭喜你，已成功获得手机一台！";
+      }
+    }
+
+    /******** 助力 ********/
+    async function help(id) {
+      const ref = db.collection("activities").doc(id);
       const snap = await ref.get();
       if (!snap.exists) return;
 
-      const owner = snap.data().owner;
-      if (owner === uid) return;
+      if (snap.data().owner === uid) return;
 
-      const helped = await db
-        .collection("helps")
-        .where("activityId", "==", activityId)
+      const helped = await db.collection("helps")
+        .where("activityId", "==", id)
         .where("helper", "==", uid)
         .get();
 
-      if (!helped.empty) {
-        alert("你已经助力过该活动");
-        return;
-      }
+      if (!helped.empty) return;
 
       await db.collection("helps").add({
-        activityId,
-        owner,
+        activityId: id,
+        owner: snap.data().owner,
         helper: uid,
         createdAt: Date.now()
       });
@@ -214,9 +223,10 @@
         knives: firebase.firestore.FieldValue.increment(1)
       });
 
-      alert("助力成功，感谢支持联信资！");
+      alert("助力成功，已帮 TA 砍一刀！");
+      loadActivity(id);
     }
   </script>
+
 </body>
 </html>
-
