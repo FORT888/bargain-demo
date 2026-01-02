@@ -24,11 +24,8 @@
       width: 100%;
       height: 100%;
       margin: 0;
-      padding: 0;
       overflow: hidden;
-      position: fixed;        /* 🔒 关键 */
-      touch-action: none;     /* 🔒 关键 */
-      overscroll-behavior: none;
+      position: fixed;
       background: #f6f8fb;
     }
 
@@ -49,9 +46,8 @@
       text-align: center;
     }
 
-    /* 🔥 LOGO 放大 */
     .logo {
-      width: 140px;           /* 比之前大很多 */
+      width: 160px;
       margin: 0 auto 18px;
       display: block;
     }
@@ -68,15 +64,8 @@
       margin-bottom: 18px;
     }
 
-    .info {
-      font-size: 13px;
-      color: #374151;
-      margin-bottom: 10px;
-      word-break: break-all;
-    }
-
     .count {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 600;
       color: #2563eb;
       margin-bottom: 20px;
@@ -91,11 +80,14 @@
       font-weight: 600;
       cursor: pointer;
       margin-top: 14px;
-      background: #2563eb;
-      color: #ffffff;
     }
 
-    .btn.secondary {
+    .primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .secondary {
       background: #eef2ff;
       color: #2563eb;
     }
@@ -114,27 +106,18 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <div class="card">
-    <!-- LOGO -->
     <img src="logo.png" class="logo" />
 
     <h1>联信资 · 助力活动</h1>
     <div class="sub">品牌曝光 · 限量实物奖励</div>
 
-    <div id="uidText" class="info"></div>
-    <div id="countText" class="count">已砍：0 / 1000</div>
+    <div id="countText" class="count">进度：0%</div>
 
-    <!-- 按钮 1：帮好友砍一刀 -->
-    <button class="btn secondary" id="btnHelp">
-      帮好友砍一刀
-    </button>
-
-    <!-- 按钮 2：发起砍一刀 -->
-    <button class="btn" id="btnCreate">
-      发起砍一刀
-    </button>
+    <button class="btn secondary" id="btnHelp">帮好友助力</button>
+    <button class="btn primary" id="btnCreate">发起助力</button>
 
     <div id="result" class="result"></div>
 
@@ -142,7 +125,7 @@
   </div>
 
   <script>
-    /******** Firebase 配置 ********/
+    /******** Firebase 配置（你自己的） ********/
     const firebaseConfig = {
       apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
       authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -155,113 +138,84 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    /******** 身份生成（任何按钮都会触发） ********/
-    function ensureUid() {
+    /******** Cloud Function 接口 ********/
+    const HELP_API =
+      "https://us-central1-cut-demo-e11b9.cloudfunctions.net/helpActivity";
+
+    /******** 生成本地身份 ********/
+    function getUid() {
       let uid = localStorage.getItem("uid");
       if (!uid) {
         uid = "u_" + Math.random().toString(36).slice(2);
         localStorage.setItem("uid", uid);
       }
-      document.getElementById("uidText").innerText = "当前身份：" + uid;
       return uid;
     }
 
-    let uid = ensureUid();
-
-    /******** URL 参数 ********/
+    const uid = getUid();
     const params = new URLSearchParams(location.search);
-    const fromId = params.get("from");
+    const activityId = params.get("from");
 
-    /******** 按钮 1：帮好友砍一刀 ********/
-    document.getElementById("btnHelp").onclick = async () => {
-      uid = ensureUid();
-
-      if (!fromId) {
-        alert("请通过好友分享链接进入");
-        return;
-      }
-
-      await help(fromId);
-      loadActivity(fromId);
-    };
-
-    /******** 按钮 2：发起砍一刀 ********/
+    /******** 发起助力 ********/
     document.getElementById("btnCreate").onclick = async () => {
-      uid = ensureUid();
-
       const ref = await db.collection("activities").add({
         owner: uid,
-        knives: 0,
+        helperCount: 0,
+        progress: 0,
         finished: false,
         createdAt: Date.now()
       });
 
-      localStorage.setItem("currentActivityId", ref.id);
+      const link =
+        location.origin + location.pathname + "?from=" + ref.id;
 
       document.getElementById("result").innerText =
-        "活动已创建\n\n分享链接：\n" +
-        location.origin + location.pathname + "?from=" + ref.id;
+        "活动已创建\n\n分享链接：\n" + link;
 
       loadActivity(ref.id);
     };
 
-    /******** 加载活动 ********/
+    /******** 帮好友助力（走后端算力） ********/
+    document.getElementById("btnHelp").onclick = async () => {
+      if (!activityId) {
+        alert("请通过好友分享链接进入");
+        return;
+      }
+
+      const res = await fetch(HELP_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          activityId,
+          helperId: uid
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        loadActivity(activityId);
+        alert("助力成功！");
+      } else {
+        alert(data.error || "助力失败");
+      }
+    };
+
+    /******** 加载进度 ********/
     async function loadActivity(id) {
       const snap = await db.collection("activities").doc(id).get();
       if (!snap.exists) return;
 
-      const knives = snap.data().knives;
+      const p = snap.data().progress || 0;
       document.getElementById("countText").innerText =
-        "已砍：" + knives + " / 1000";
+        "进度：" + p.toFixed(2) + "%";
 
-      if (knives >= 1000) {
+      if (p >= 100) {
         document.getElementById("result").innerText =
-          "🎉 恭喜你，已成功获得手机一台！";
+          "🎉 恭喜，助力完成！请联系客服领取奖励";
       }
     }
 
-    /******** 助力逻辑 ********/
-    async function help(id) {
-      const ref = db.collection("activities").doc(id);
-      const snap = await ref.get();
-      if (!snap.exists) return;
-
-      if (snap.data().owner === uid) {
-        alert("不能帮自己砍");
-        return;
-      }
-
-      const helped = await db.collection("helps")
-        .where("activityId", "==", id)
-        .where("helper", "==", uid)
-        .get();
-
-      if (!helped.empty) {
-        alert("你已经帮过这个活动了");
-        return;
-      }
-
-      await db.collection("helps").add({
-        activityId: id,
-        owner: snap.data().owner,
-        helper: uid,
-        createdAt: Date.now()
-      });
-
-      await ref.update({
-        knives: firebase.firestore.FieldValue.increment(1)
-      });
-
-      alert("助力成功，已帮好友砍一刀！");
-    }
-
-    /******** 自动加载已有活动 ********/
-    const saved = localStorage.getItem("currentActivityId");
-    if (!fromId && saved) {
-      loadActivity(saved);
-    }
+    if (activityId) loadActivity(activityId);
   </script>
-
 </body>
 </html>
-
