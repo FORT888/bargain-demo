@@ -82,7 +82,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ========= UUID（兼容所有浏览器） ========= */
+/* ========= UUID ========= */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -102,11 +102,29 @@ const db=firebase.firestore();
 const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app/createActivity";
 const HELP_API="https://createactivity-23p22ouguq-uc.a.run.app/helpActivity";
 
-/* ========= deviceId（唯一身份） ========= */
+/* ========= deviceId ========= */
 let deviceId=localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId=genUUID();
   localStorage.setItem("deviceId",deviceId);
+}
+
+/* ========= URL 身份判断（🔥关键修复点） ========= */
+const params = new URLSearchParams(location.search);
+const fromActivityId = params.get("from");
+
+const btnHelp = document.getElementById("btnHelp");
+const btnCreate = document.getElementById("btnCreate");
+
+/* 页面一加载就锁按钮 */
+if (fromActivityId) {
+  // 好友助力页
+  btnCreate.disabled = true;
+  btnCreate.innerText = "助力中不可发起";
+} else {
+  // 发起者页面
+  btnHelp.disabled = true;
+  btnHelp.innerText = "请分享链接给好友助力";
 }
 
 /* ========= 转盘 ========= */
@@ -123,24 +141,16 @@ const PRIZES=[
   {key:"iphone",label:"iPhone"}
 ];
 const STEP=2*Math.PI/PRIZES.length;
-
 PRIZES.forEach((p,i)=>{
-  ctx.beginPath();
-  ctx.moveTo(R,R);
+  ctx.beginPath();ctx.moveTo(R,R);
   ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
   ctx.fillStyle=`hsl(${i*40},80%,70%)`;
   ctx.fill();
-
-  ctx.save();
-  ctx.translate(R,R);
-  ctx.rotate(i*STEP+STEP/2);
-  ctx.textAlign="right";
-  ctx.font="bold 22px PingFang SC";
-  ctx.fillStyle="#7c2d12";
-  ctx.fillText(p.label,R-30,8);
+  ctx.save();ctx.translate(R,R);ctx.rotate(i*STEP+STEP/2);
+  ctx.textAlign="right";ctx.font="bold 22px PingFang SC";
+  ctx.fillStyle="#7c2d12";ctx.fillText(p.label,R-30,8);
   ctx.restore();
 });
-
 let angle=0;
 function spinTo(key){
   const i=PRIZES.findIndex(p=>p.key===key);
@@ -155,8 +165,7 @@ function watch(id){
     if(!s.exists)return;
     const d=s.data();
     document.getElementById("progressInner").style.width=d.progress+"%";
-    document.getElementById("progressText").innerText=
-      `完成进度 ${d.progress.toFixed(1)}%`;
+    document.getElementById("progressText").innerText=`完成进度 ${d.progress.toFixed(1)}%`;
     document.getElementById("prizeText").innerText=
       PRIZES.find(p=>p.key===d.prizeKey)?.label||"";
   });
@@ -164,6 +173,8 @@ function watch(id){
 
 /* ========= 发起助力 ========= */
 btnCreate.onclick=async()=>{
+  if (btnCreate.disabled) return;
+
   const r=await fetch(CREATE_API,{
     method:"POST",
     headers:{
@@ -182,11 +193,7 @@ btnCreate.onclick=async()=>{
 
 /* ========= 帮助好友助力 ========= */
 btnHelp.onclick=async()=>{
-  const activityId=new URLSearchParams(location.search).get("from");
-  if(!activityId){
-    alert("当前不是助力链接");
-    return;
-  }
+  if (btnHelp.disabled) return;
 
   const r=await fetch(HELP_API,{
     method:"POST",
@@ -194,9 +201,8 @@ btnHelp.onclick=async()=>{
       "Content-Type":"application/json",
       "x-device-id":deviceId
     },
-    body:JSON.stringify({ activityId })
+    body:JSON.stringify({ activityId: fromActivityId })
   });
-
   const d=await r.json();
   if(!d.success){
     alert(d.error||"你已经助过力了");
@@ -204,18 +210,11 @@ btnHelp.onclick=async()=>{
   }
 };
 
-/* ========= 助力页自动监听 ========= */
-const from=new URLSearchParams(location.search).get("from");
-if(from){
-  watch(from);
+/* ========= 好友助力页自动监听 ========= */
+if(fromActivityId){
+  watch(fromActivityId);
 }
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
