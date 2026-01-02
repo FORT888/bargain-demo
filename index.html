@@ -31,9 +31,16 @@ body{
   z-index:2;
 }
 
-h1{margin:6px 0;font-size:22px}
+h1{margin:6px 0 2px;font-size:22px}
 
-/* ===== 转盘容器 ===== */
+.prize-box{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.prize-box span{color:#dc2626}
+
+/* ===== 转盘区域 ===== */
 .wheel-wrap{
   width:300px;
   height:300px;
@@ -41,57 +48,62 @@ h1{margin:6px 0;font-size:22px}
   position:relative;
 }
 
-/* 转盘 Canvas */
+/* 转盘 */
 #wheel{
   width:100%;
   height:100%;
   border-radius:50%;
-  transition:transform 3.6s cubic-bezier(.25,.9,.25,1);
+  transition:transform 3.8s cubic-bezier(.25,.9,.25,1);
   position:relative;
   z-index:2;
 }
 
-/* 中心 Logo */
+/* 中心 Logo（无留白） */
 #centerLogo{
   position:absolute;
   left:50%;
   top:50%;
-  width:78px;
-  height:78px;
+  width:110px;
+  height:110px;
   transform:translate(-50%,-50%);
-  border-radius:50%;
-  background:#fff;
-  padding:10px;
-  box-shadow:0 8px 24px rgba(0,0,0,.25);
   pointer-events:none;
   z-index:3;
 }
 
-/* ===== 金币层（在转盘后） ===== */
-.coins-layer{
+/* ===== 红包雨（在转盘后） ===== */
+.redpack-layer{
   position:absolute;
   inset:0;
   overflow:hidden;
-  z-index:1;              /* 👈 在转盘后面 */
+  z-index:1;
   pointer-events:none;
 }
 
-/* 单个金币 */
-.coin{
+.redpack{
   position:absolute;
-  top:-40px;
+  top:-30px;
   width:26px;
-  height:26px;
-  border-radius:50%;
-  background:radial-gradient(circle at 30% 30%,#fff7c2,#f59e0b);
-  box-shadow:0 4px 10px rgba(0,0,0,.25);
+  height:34px;
+  background:#dc2626;
+  border-radius:4px;
   animation:fall linear infinite;
-  opacity:.9;
+}
+
+/* 金封口 */
+.redpack::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:6px;
+  background:#fde68a;
+  border-radius:4px 4px 0 0;
 }
 
 @keyframes fall{
   to{
-    transform:translateY(120vh) rotate(360deg);
+    transform:translateY(120vh);
   }
 }
 
@@ -136,9 +148,13 @@ h1{margin:6px 0;font-size:22px}
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
 
+  <div class="prize-box">
+    奖品：<span id="prizeText">未确定</span>
+  </div>
+
   <div class="wheel-wrap">
-    <!-- 金币 -->
-    <div class="coins-layer" id="coins"></div>
+    <!-- 红包雨 -->
+    <div class="redpack-layer" id="packs"></div>
 
     <!-- 转盘 -->
     <canvas id="wheel" width="600" height="600"></canvas>
@@ -157,7 +173,7 @@ h1{margin:6px 0;font-size:22px}
 </div>
 
 <script>
-/* ================== 绘制转盘 ================== */
+/* ================== 转盘绘制 ================== */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -184,60 +200,43 @@ PRIZES.forEach((text,i)=>{
   ctx.fillStyle = COLORS[i];
   ctx.fill();
 
-  // 高光
-  ctx.save();
-  ctx.globalAlpha = 0.12;
-  ctx.beginPath();
-  ctx.moveTo(R,R);
-  ctx.arc(R,R,R*0.92,start,end);
-  ctx.fillStyle="#fff";
-  ctx.fill();
-  ctx.restore();
-
-  // 文字
+  // 文字（明显加大）
   ctx.save();
   ctx.translate(R,R);
   ctx.rotate(start + STEP/2);
   ctx.textAlign="right";
-  ctx.font="bold 20px PingFang SC";
+  ctx.font="bold 24px PingFang SC";
   ctx.fillStyle="#7c2d12";
-  ctx.fillText(text,R-28,8);
+  ctx.fillText(text,R-30,10);
   ctx.restore();
 });
 
-// 中心圆
-ctx.beginPath();
-ctx.arc(R,R,42,0,Math.PI*2);
-ctx.fillStyle="#fff7ed";
-ctx.fill();
-
-/* ================== 转盘旋转 ================== */
+/* ================== 旋转 ================== */
 let angle = 0;
 function spin(){
   angle += 1440 + Math.random()*360;
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ================== 金币生成 ================== */
-const coinsBox = document.getElementById("coins");
+/* ================== 红包雨 ================== */
+const box = document.getElementById("packs");
 
-function spawnCoin(){
-  const c = document.createElement("div");
-  c.className = "coin";
-  c.style.left = Math.random()*100 + "%";
-  c.style.animationDuration = 2 + Math.random()*3 + "s";
-  c.style.opacity = 0.5 + Math.random()*0.5;
-  coinsBox.appendChild(c);
-
-  setTimeout(()=>c.remove(),5000);
+function spawnPack(){
+  const p = document.createElement("div");
+  p.className = "redpack";
+  p.style.left = Math.random()*100 + "%";
+  p.style.animationDuration = 4 + Math.random()*2 + "s"; // 慢一点
+  box.appendChild(p);
+  setTimeout(()=>p.remove(),7000);
 }
 
-// 持续掉落
-setInterval(spawnCoin,300);
+setInterval(spawnPack,450);
 
-/* ================== 按钮示例 ================== */
+/* ================== 演示交互 ================== */
 document.getElementById("btnCreate").onclick = ()=>{
   spin();
+  document.getElementById("prizeText").innerText =
+    PRIZES[Math.floor(Math.random()*PRIZES.length)];
   fakeProgress();
 };
 document.getElementById("btnHelp").onclick = ()=>{
@@ -245,10 +244,9 @@ document.getElementById("btnHelp").onclick = ()=>{
   fakeProgress();
 };
 
-/* ================== 模拟进度（示意） ================== */
 let p = 0;
 function fakeProgress(){
-  p = Math.min(100, p + Math.random()*8);
+  p = Math.min(100, p + Math.random()*6);
   document.getElementById("progressInner").style.width = p + "%";
   document.getElementById("progressText").innerText =
     "完成进度 " + p.toFixed(1) + "%";
@@ -257,3 +255,4 @@ function fakeProgress(){
 
 </body>
 </html>
+
