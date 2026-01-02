@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>联信资 · 助力转盘</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-*{box-sizing:border-box}
 body{
   margin:0;
   height:100vh;
@@ -24,51 +23,38 @@ body{
   max-width:420px;
   background:#fff;
   border-radius:28px;
-  padding:22px 16px 26px;
+  padding:20px 14px 26px;
   box-shadow:0 24px 60px rgba(0,0,0,.12);
   text-align:center;
 }
-h1{font-size:22px;margin:6px 0}
-.sub{font-size:13px;color:#6b7280;margin-bottom:10px}
+h1{margin:6px 0;font-size:22px}
+.sub{font-size:13px;color:#6b7280}
 
 /* ===== 转盘 ===== */
 .wheel-wrap{
   position:relative;
   width:320px;
   height:320px;
-  margin:0 auto 10px;
+  margin:14px auto;
 }
 .wheel{
   width:100%;
   height:100%;
   border-radius:50%;
-  background:conic-gradient(
-    #22c55e 0% 50%,
-    #facc15 50% 90%,
-    #ef4444 90% 100%
-  );
-  transition:transform 2.8s cubic-bezier(.2,.9,.3,1);
+  transition:transform 2.8s cubic-bezier(.25,.9,.3,1);
 }
 
-/* ===== 百分比信息块 ===== */
-.info-ring{
+/* ===== 指针 ===== */
+.pointer{
   position:absolute;
-  inset:-18px;
-  pointer-events:none;
-}
-.info{
-  position:absolute;
-  width:64px;
-  height:30px;
-  background:#fff;
-  border-radius:16px;
-  font-size:12px;
-  font-weight:700;
-  color:#2563eb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 4px 12px rgba(0,0,0,.15);
+  top:-4px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-bottom:28px solid #111;
+  z-index:5;
 }
 
 /* ===== 中心 LOGO ===== */
@@ -78,70 +64,50 @@ h1{font-size:22px;margin:6px 0}
   display:flex;
   justify-content:center;
   align-items:center;
-  z-index:3;
+  z-index:4;
 }
 .center-btn{
   width:150px;
   height:150px;
   border-radius:50%;
-  background:radial-gradient(circle,#fff 30%,#e5e7eb 100%);
+  background:#fff;
   box-shadow:
-    inset 0 6px 14px rgba(255,255,255,.9),
-    inset 0 -10px 20px rgba(0,0,0,.12),
-    0 18px 30px rgba(0,0,0,.25);
+    inset 0 8px 16px rgba(255,255,255,.9),
+    inset 0 -12px 24px rgba(0,0,0,.15),
+    0 18px 36px rgba(0,0,0,.25);
   cursor:pointer;
 }
 .center-btn img{
   width:100%;
   height:100%;
-  object-fit:contain;
-  padding:12px;
+  border-radius:50%;
+  object-fit:cover;
 }
 
-/* ===== 指针（中心向上，略短）===== */
-.pointer{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-100%);
-  width:0;height:0;
-  border-left:9px solid transparent;
-  border-right:9px solid transparent;
-  border-bottom:30px solid #111;
-  z-index:4;
-}
-
-/* ===== 文案 ===== */
+/* ===== 文字 ===== */
 .percent{
   font-size:18px;
   font-weight:700;
   color:#2563eb;
-  margin-top:6px;
 }
-.hint{font-size:13px;color:#6b7280;margin-top:8px}
+.hint{
+  margin-top:6px;
+  font-size:13px;
+  color:#6b7280;
+}
 
 /* ===== 按钮 ===== */
 .btn{
   width:100%;
+  margin-top:14px;
+  padding:14px;
   border:none;
   border-radius:16px;
-  padding:14px;
   font-size:16px;
   font-weight:600;
-  margin-top:12px;
   background:#2563eb;
   color:#fff;
   cursor:pointer;
-}
-
-/* ===== 抖动 ===== */
-.shake{animation:shake .4s infinite}
-@keyframes shake{
-  0%{transform:rotate(0)}
-  25%{transform:rotate(1deg)}
-  50%{transform:rotate(-1deg)}
-  75%{transform:rotate(1deg)}
-  100%{transform:rotate(0)}
 }
 </style>
 </head>
@@ -149,12 +115,11 @@ h1{font-size:22px;margin:6px 0}
 <body>
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
-  <div class="sub">点击中心按钮即可帮好友助力</div>
+  <div class="sub">点击中间按钮即可帮好友助力</div>
 
   <div class="wheel-wrap">
-    <div class="wheel" id="wheel"></div>
-    <div class="info-ring" id="infoRing"></div>
     <div class="pointer"></div>
+    <canvas id="wheel" class="wheel" width="320" height="320"></canvas>
     <div class="center">
       <div class="center-btn" id="centerBtn">
         <img src="logo.png">
@@ -171,16 +136,16 @@ h1{font-size:22px;margin:6px 0}
 <script>
 /* ===== Firebase ===== */
 firebase.initializeApp({
-      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-      authDomain: "cut-demo-e11b9.firebaseapp.com",
-      projectId: "cut-demo-e11b9",
-      storageBucket: "cut-demo-e11b9.firebasestorage.app",
-      messagingSenderId: "1065166593402",
-      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
+  apiKey:"你的",
+  authDomain:"你的",
+  projectId:"你的",
+  storageBucket:"你的",
+  messagingSenderId:"你的",
+  appId:"你的"
 });
 const db=firebase.firestore();
 
-/* ===== 接口 ===== */
+/* ===== 后端 ===== */
 const HELP_API="你的 helpActivity 地址";
 const GET_UID_API="你的 getUid 地址";
 
@@ -199,55 +164,76 @@ initUid();
 /* ===== 活动 ===== */
 const params=new URLSearchParams(location.search);
 const activityId=params.get("from");
-let angle=0,currentProgress=0;
+let progress=0;
+let angle=0;
 
-/* ===== 百分比框（含完成项）===== */
-const percentLabels=[0,8,16,24,32,40,48,56,64,72,80,"完成"];
-function buildRing(){
-  const ring=document.getElementById("infoRing");
-  ring.innerHTML="";
-  const r=165;
-  percentLabels.forEach((p,i)=>{
-    const d=document.createElement("div");
-    d.className="info";
-    d.innerText=typeof p==="number"?p+"%":"100%";
-    const a=(360/percentLabels.length)*i;
-    d.style.left=160+Math.cos(a*Math.PI/180)*r-32+"px";
-    d.style.top =160+Math.sin(a*Math.PI/180)*r-15+"px";
-    ring.appendChild(d);
+/* ===== 转盘配置 ===== */
+const slices=[
+  {p:0,color:"#22c55e"},
+  {p:8,color:"#16a34a"},
+  {p:16,color:"#4ade80"},
+  {p:24,color:"#facc15"},
+  {p:32,color:"#fbbf24"},
+  {p:40,color:"#fde047"},
+  {p:48,color:"#fb7185"},
+  {p:56,color:"#f87171"},
+  {p:64,color:"#60a5fa"},
+  {p:72,color:"#38bdf8"},
+  {p:80,color:"#818cf8"},
+  {p:88,color:"#a78bfa"},
+  {p:95,color:"#f472b6"},
+  {p:99,color:"#fb7185"},
+  {p:100,color:"#ef4444"} // 完成
+];
+
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+const R=160;
+
+function drawWheel(){
+  const step=2*Math.PI/slices.length;
+  slices.forEach((s,i)=>{
+    const start=i*step;
+    const end=start+step;
+    ctx.beginPath();
+    ctx.moveTo(R,R);
+    ctx.arc(R,R,R,start,end);
+    ctx.fillStyle=s.color;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(R,R);
+    ctx.rotate(start+step/2);
+    ctx.textAlign="right";
+    ctx.fillStyle="#fff";
+    ctx.font="bold 14px sans-serif";
+    ctx.fillText(s.p+"%",R-12,6);
+    ctx.restore();
   });
 }
-buildRing();
+drawWheel();
 
-/* ===== 转盘 ===== */
-function rotateTo(p){
-  angle+=720+Math.random()*360;
-  document.getElementById("wheel").style.transform=
-    `rotate(${angle+p*3.6}deg)`;
+function rotateToProgress(p){
+  const idx=slices.findIndex(s=>s.p>=p);
+  const step=360/slices.length;
+  angle+=720+idx*step;
+  canvas.style.transform=`rotate(${angle}deg)`;
   document.getElementById("percentText").innerText="当前进度："+p.toFixed(2)+"%";
-
-  if(p>=95&&p<100){
-    document.getElementById("wheel").classList.add("shake");
-    document.getElementById("hintText").innerText="怎么还差一点点 🤯";
-  }else{
-    document.getElementById("wheel").classList.remove("shake");
-  }
 }
 
-/* ===== 读取进度 ===== */
 async function loadActivity(){
   if(!activityId)return;
   const s=await db.collection("activities").doc(activityId).get();
   if(!s.exists)return;
-  currentProgress=s.data().progress||0;
-  rotateTo(currentProgress);
+  progress=s.data().progress||0;
+  rotateToProgress(progress);
 }
-if(activityId) loadActivity();
+if(activityId)loadActivity();
 
-/* ===== 中心点击助力 ===== */
+/* ===== 点击中心助力 ===== */
 document.getElementById("centerBtn").onclick=async()=>{
   if(!activityId||!uid)return;
-  rotateTo(currentProgress+Math.random()*2);
+  rotateToProgress(progress+Math.random()*2);
   const r=await fetch(HELP_API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -273,6 +259,7 @@ document.getElementById("btnCreate").onclick=async()=>{
 </script>
 </body>
 </html>
+
 
 
 
