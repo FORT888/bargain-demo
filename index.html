@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>联信资 · 助力转盘</title>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <style>
 *{box-sizing:border-box}
 body{
@@ -21,26 +18,37 @@ body{
   overflow:hidden;
 }
 
-/* ================== 第二层金币 ================== */
+/* ===================================================
+   第二层：金币 + 渐变玻璃层（透底）
+=================================================== */
 #coins-mid{
   position:fixed;
   inset:0;
   z-index:2;
   pointer-events:none;
 
-  /* ↓ 向下渐隐 */
+  /* 玻璃感渐变（透出背景） */
+  background:linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.14) 0%,
+    rgba(255,255,255,0.08) 40%,
+    rgba(255,255,255,0.03) 65%,
+    rgba(255,255,255,0) 85%
+  );
+
+  /* 控制金币整体消失 */
   mask-image: linear-gradient(
     to bottom,
     rgba(0,0,0,1) 0%,
     rgba(0,0,0,.9) 45%,
-    rgba(0,0,0,.3) 70%,
+    rgba(0,0,0,.4) 70%,
     rgba(0,0,0,0) 90%
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
     rgba(0,0,0,1) 0%,
     rgba(0,0,0,.9) 45%,
-    rgba(0,0,0,.3) 70%,
+    rgba(0,0,0,.4) 70%,
     rgba(0,0,0,0) 90%
   );
 }
@@ -53,6 +61,7 @@ body{
   height:22px;
   border-radius:50%;
   background:radial-gradient(circle,#fde68a,#f59e0b);
+  opacity:.9;
   animation:fall-mid linear infinite;
 }
 
@@ -61,25 +70,26 @@ body{
   to{transform:translateY(110vh) rotate(360deg)}
 }
 
-/* ======= 转盘区域暗化遮罩（核心） ======= */
+/* 转盘区域柔性暗化（重点） */
 #coins-mid::after{
   content:"";
   position:absolute;
   inset:0;
   pointer-events:none;
 
-  /* 透明圆 = 转盘位置，其余区域轻微暗 */
   background:
     radial-gradient(
       circle at 50% 48%,
-      rgba(0,0,0,0.35) 0%,
-      rgba(0,0,0,0.35) 140px,
-      rgba(0,0,0,0) 180px
+      rgba(0,0,0,0.18) 0%,
+      rgba(0,0,0,0.14) 120px,
+      rgba(0,0,0,0.08) 160px,
+      rgba(0,0,0,0) 200px
     );
-  mix-blend-mode:multiply;
 }
 
-/* ================== 卡片（第三层） ================== */
+/* ===================================================
+   第三层：主卡片（转盘）
+=================================================== */
 .card{
   width:92%;
   max-width:420px;
@@ -154,6 +164,7 @@ canvas{
 <!-- 第二层金币 -->
 <div id="coins-mid"></div>
 
+<!-- 第三层卡片 -->
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
   <div class="sub">完成进度越高，奖励越接近</div>
@@ -172,25 +183,25 @@ canvas{
 </div>
 
 <script>
-/* ===== 奖品 ===== */
+/* ================= 转盘数据 ================= */
 const PRIZES=[
-  {label:"红包66元"},
-  {label:"红包88元"},
-  {label:"红包168元"},
-  {label:"红包388元"},
-  {label:"红包588元"},
-  {label:"红包888元"},
-  {label:"iPhone 17 Pro Max"}
+  "红包66元",
+  "红包88元",
+  "红包168元",
+  "红包388元",
+  "红包588元",
+  "红包888元",
+  "iPhone 17 Pro Max"
 ];
 
-/* ===== 转盘绘制 ===== */
+/* ================= 绘制转盘 ================= */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=160;
 const step=2*Math.PI/PRIZES.length;
 
 function drawWheel(){
-  PRIZES.forEach((p,i)=>{
+  PRIZES.forEach((text,i)=>{
     const start=i*step;
     const end=start+step;
     const mid=start+step/2;
@@ -205,15 +216,15 @@ function drawWheel(){
     ctx.translate(R,R);
     ctx.rotate(mid);
     ctx.textAlign="right";
-    ctx.font="bold 14px PingFang SC";
+    ctx.font="bold 14px PingFang SC, Microsoft YaHei";
     ctx.fillStyle="#374151";
-    ctx.fillText(p.label,R-20,6);
+    ctx.fillText(text,R-20,6);
     ctx.restore();
   });
 }
 drawWheel();
 
-/* ===== 金币生成 ===== */
+/* ================= 生成金币 ================= */
 const mid=document.getElementById("coins-mid");
 for(let i=0;i<18;i++){
   const c=document.createElement("div");
@@ -227,3 +238,4 @@ for(let i=0;i<18;i++){
 
 </body>
 </html>
+
