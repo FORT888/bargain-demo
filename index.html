@@ -20,144 +20,43 @@ body{
   align-items:center;
   overflow:hidden;
 }
-
-/* ================= 第二层：金币（不拦截点击） ================= */
-#coins-mid,
-#coins-mid *,
-#coins-mid::after{
-  pointer-events:none;
-}
-
-#coins-mid{
-  position:fixed;
-  inset:0;
-  z-index:2;
-
-  background:linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.14) 0%,
-    rgba(255,255,255,0.08) 40%,
-    rgba(255,255,255,0.03) 65%,
-    rgba(255,255,255,0) 85%
-  );
-
-  mask-image: linear-gradient(
-    to bottom,
-    rgba(0,0,0,1) 0%,
-    rgba(0,0,0,.9) 45%,
-    rgba(0,0,0,.4) 70%,
-    rgba(0,0,0,0) 90%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    rgba(0,0,0,1) 0%,
-    rgba(0,0,0,.9) 45%,
-    rgba(0,0,0,.4) 70%,
-    rgba(0,0,0,0) 90%
-  );
-}
-
-.mid-coin{
-  position:absolute;
-  top:-40px;
-  width:22px;
-  height:22px;
-  border-radius:50%;
-  background:radial-gradient(circle,#fde68a,#f59e0b);
-  opacity:.9;
-  animation:fall-mid linear infinite;
-}
-@keyframes fall-mid{
-  to{transform:translateY(110vh) rotate(360deg)}
-}
-
-/* 转盘区域柔性暗化 */
-#coins-mid::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    radial-gradient(
-      circle at 50% 48%,
-      rgba(0,0,0,0.18) 0%,
-      rgba(0,0,0,0.14) 120px,
-      rgba(0,0,0,0.08) 160px,
-      rgba(0,0,0,0) 200px
-    );
-}
-
-/* ================= 主卡片 ================= */
 .card{
-  width:92%;
-  max-width:420px;
-  background:#fff;
-  border-radius:28px;
-  padding:22px 18px 28px;
-  box-shadow:0 30px 80px rgba(0,0,0,.15);
-  text-align:center;
-  position:relative;
-  z-index:3;
+  width:92%;max-width:420px;background:#fff;border-radius:28px;
+  padding:22px 18px 28px;box-shadow:0 30px 80px rgba(0,0,0,.15);
+  text-align:center;position:relative;z-index:3;
 }
-
 h1{margin:6px 0;font-size:22px}
 .sub{font-size:13px;color:#6b7280;margin-bottom:8px}
-
-.prize-box{
-  margin:10px 0;
-  font-size:15px;
-  font-weight:600;
-}
+.prize-box{margin:10px 0;font-size:15px;font-weight:600}
 .prize-box span{color:#dc2626}
-
-/* 转盘 */
-.wheel-wrap{
-  position:relative;
-  width:320px;
-  height:320px;
-  margin:14px auto;
-}
-canvas{
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  transition:transform 3.5s cubic-bezier(.25,.9,.3,1);
-}
+.wheel-wrap{position:relative;width:320px;height:320px;margin:14px auto}
+canvas{width:100%;height:100%;border-radius:50%;
+  transition:transform 3.5s cubic-bezier(.25,.9,.3,1)}
 .center{
-  position:absolute;
-  inset:50%;
-  transform:translate(-50%,-50%);
-  width:160px;
-  height:160px;
-  border-radius:50%;
-  overflow:hidden;
-  box-shadow:0 12px 36px rgba(0,0,0,.3);
+  position:absolute;inset:50%;transform:translate(-50%,-50%);
+  width:160px;height:160px;border-radius:50%;overflow:hidden;
 }
-.center img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-/* 按钮 */
+.center img{width:100%;height:100%;object-fit:cover}
 .btn{
-  width:100%;
-  margin-top:12px;
-  padding:14px;
-  border:none;
-  border-radius:16px;
-  font-size:16px;
-  font-weight:600;
-  cursor:pointer;
+  width:100%;margin-top:12px;padding:14px;border:none;
+  border-radius:16px;font-size:16px;font-weight:600;cursor:pointer
 }
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
+.progress-wrap{margin-top:14px}
+.progress-bar{height:12px;background:#fde68a;border-radius:999px;overflow:hidden}
+.progress-inner{height:100%;width:0%;background:#ef4444;transition:.4s}
+.progress-text{margin-top:6px;font-size:13px;color:#b91c1c}
+.link-box{
+  margin-top:10px;
+  font-size:12px;
+  color:#374151;
+  word-break:break-all;
+}
 </style>
 </head>
 
 <body>
-
-<!-- 第二层金币 -->
-<div id="coins-mid"></div>
 
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
@@ -172,12 +71,21 @@ canvas{
     <div class="center"><img src="logo.png"></div>
   </div>
 
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-inner" id="progressInner"></div>
+    </div>
+    <div class="progress-text" id="progressPercent">已完成 0%</div>
+  </div>
+
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
   <button class="btn primary" id="btnCreate">发起助力试试</button>
+
+  <div class="link-box" id="linkBox"></div>
 </div>
 
 <script>
-/* ================= Firebase ================= */
+/* ===== Firebase ===== */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain:"cut-demo-e11b9.firebaseapp.com",
@@ -185,11 +93,22 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-/* ================= 接口 ================= */
+/* ===== deviceToken ===== */
+function getDeviceToken(){
+  let t=localStorage.getItem("deviceToken");
+  if(!t){
+    t=crypto.randomUUID();
+    localStorage.setItem("deviceToken",t);
+  }
+  return t;
+}
+const deviceToken=getDeviceToken();
+
+/* ===== 接口 ===== */
 const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= 奖品 ================= */
+/* ===== 奖品 ===== */
 const PRIZES=[
   {key:"66",label:"红包66元"},
   {key:"88",label:"红包88元"},
@@ -200,88 +119,82 @@ const PRIZES=[
   {key:"iphone",label:"iPhone 17 Pro Max"}
 ];
 
-/* ================= 转盘绘制 ================= */
+/* ===== 转盘 ===== */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-const R=160;
-const step=2*Math.PI/PRIZES.length;
-
-function drawWheel(){
-  PRIZES.forEach((p,i)=>{
-    const start=i*step;
-    const end=start+step;
-    const mid=start+step/2;
-
-    ctx.beginPath();
-    ctx.moveTo(R,R);
-    ctx.arc(R,R,R,start,end);
-    ctx.fillStyle=`hsl(${i*45},80%,80%)`;
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(R,R);
-    ctx.rotate(mid);
-    ctx.textAlign="right";
-    ctx.font="bold 14px PingFang SC, Microsoft YaHei";
-    ctx.fillStyle="#374151";
-    ctx.fillText(p.label,R-20,6);
-    ctx.restore();
-  });
-}
-drawWheel();
-
+const R=160,step=2*Math.PI/PRIZES.length;
+PRIZES.forEach((p,i)=>{
+  ctx.beginPath();ctx.moveTo(R,R);
+  ctx.arc(R,R,R,i*step,(i+1)*step);
+  ctx.fillStyle=`hsl(${i*45},80%,80%)`;ctx.fill();
+});
 let angle=0;
-function spinTo(index){
-  angle+=1440+index*(360/PRIZES.length);
+function spinTo(i){
+  angle+=1440+i*(360/PRIZES.length);
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
-/* ================= 金币生成 ================= */
-const mid=document.getElementById("coins-mid");
-for(let i=0;i<18;i++){
-  const c=document.createElement("div");
-  c.className="mid-coin";
-  c.style.left=Math.random()*100+"%";
-  c.style.animationDuration=6+Math.random()*6+"s";
-  c.style.animationDelay=Math.random()*6+"s";
-  mid.appendChild(c);
+/* ===== 实时监听 ===== */
+function watchProgress(id){
+  db.collection("activities").doc(id).onSnapshot(s=>{
+    if(!s.exists)return;
+    const d=s.data();
+    const percent=Math.min(100,(d.helperCount||0)/500*100);
+    document.getElementById("progressInner").style.width=percent+"%";
+    document.getElementById("progressPercent").innerText=
+      percent>=100?"已完成 100%":`已完成 ${percent.toFixed(1)}%`;
+    const p=PRIZES.find(x=>x.key===d.prizeKey);
+    if(p)document.getElementById("prizeText").innerText=p.label;
+  });
 }
 
-/* ================= 业务逻辑（真正的） ================= */
-let activityId=new URLSearchParams(location.search).get("from");
+/* ===== 页面初始化：恢复旧活动 ===== */
+let activityId = localStorage.getItem("activityId");
 
+if(activityId){
+  watchProgress(activityId);
+  document.getElementById("linkBox").innerText =
+    "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+}
+
+/* ===== 发起助力 ===== */
 document.getElementById("btnCreate").onclick=async()=>{
-  const r=await fetch(CREATE_API,{method:"POST"});
+  const r=await fetch(CREATE_API,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({deviceToken})
+  });
   const d=await r.json();
 
   activityId=d.activityId;
+  localStorage.setItem("activityId",activityId);
 
   const index=PRIZES.findIndex(p=>p.key===d.prizeKey);
   spinTo(index);
 
-  document.getElementById("prizeText").innerText=
-    PRIZES[index].label;
+  document.getElementById("linkBox").innerText =
+    "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+
+  watchProgress(activityId);
 };
 
+/* ===== 帮助好友 ===== */
 document.getElementById("btnHelp").onclick=async()=>{
-  if(!activityId) return alert("请通过好友分享链接进入");
-
+  if(!activityId)return alert("请通过好友分享链接进入");
   const r=await fetch(HELP_API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({activityId})
+    body:JSON.stringify({activityId,deviceToken})
   });
   const d=await r.json();
-
-  if(!d.success) return alert(d.error||"你已助过力");
-
+  if(!d.success)return alert(d.error||"你已助过力");
   const index=PRIZES.findIndex(p=>p.key===d.prizeKey);
   spinTo(index);
 };
 </script>
-
 </body>
 </html>
+
 
 
 
