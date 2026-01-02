@@ -2,85 +2,55 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>联信资 · 新用户助力计划</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>联信资 · 助力转盘</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
 body{
   margin:0;
-  background:linear-gradient(180deg,#f8fafc,#eef2ff);
+  height:100vh;
+  background:#f6f8fb;
+  display:flex;
+  justify-content:center;
+  align-items:center;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-  color:#0f172a;
-}
-.container{
-  max-width:420px;
-  margin:0 auto;
-  padding:18px 14px 28px;
+  overflow:hidden;
 }
 .card{
+  width:92%;
+  max-width:420px;
   background:#fff;
-  border-radius:22px;
-  padding:18px;
-  box-shadow:0 18px 40px rgba(0,0,0,.08);
-  margin-bottom:14px;
-}
-h1{font-size:22px;margin:0 0 6px}
-.sub{font-size:13px;color:#64748b}
-
-/* 奖品 */
-.prize-title{
+  border-radius:28px;
+  padding:20px 16px 26px;
+  box-shadow:0 24px 60px rgba(0,0,0,.12);
   text-align:center;
-  font-size:18px;
-  font-weight:700;
 }
-.progress-text{
-  text-align:center;
-  font-size:13px;
-  margin-top:10px;
-}
+h1{font-size:22px;margin:6px 0}
+.sub{font-size:13px;color:#6b7280}
 
-/* 进度条 */
-.progress{
-  height:10px;
-  background:#e5e7eb;
-  border-radius:999px;
-  overflow:hidden;
-  margin-top:6px;
+.prize-box{
+  margin:10px 0;
+  font-size:15px;
+  font-weight:600;
 }
-.progress span{
-  display:block;
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#6366f1,#22d3ee);
-  transition:width .4s;
-}
+.prize-box span{color:#e11d48}
 
 /* 转盘 */
 .wheel-wrap{
   position:relative;
-  width:260px;
-  height:260px;
-  margin:20px auto 10px;
+  width:320px;
+  height:320px;
+  margin:14px auto;
 }
 canvas{
   width:100%;
   height:100%;
   border-radius:50%;
-  transition:transform 3.2s cubic-bezier(.2,.9,.25,1);
-}
-
-/* 高级指针 */
-.indicator{
-  position:absolute;
-  top:-6px;
-  left:50%;
-  transform:translateX(-50%);
-  width:42px;
-  height:6px;
-  border-radius:6px;
-  background:linear-gradient(90deg,#f59e0b,#f97316);
-  box-shadow:0 4px 12px rgba(0,0,0,.25);
-  z-index:6;
+  transition:transform 3s cubic-bezier(.25,.9,.3,1);
 }
 
 /* 中心 LOGO */
@@ -88,105 +58,143 @@ canvas{
   position:absolute;
   inset:50%;
   transform:translate(-50%,-50%);
-  width:130px;
-  height:130px;
+  width:150px;
+  height:150px;
   border-radius:50%;
-  background:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:
-    inset 0 0 0 6px #f1f5f9,
-    0 10px 30px rgba(0,0,0,.2);
-  z-index:5;
+  overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  z-index:3;
 }
 .center img{
-  max-width:75%;
-  max-height:75%;
-  object-fit:contain;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* 指针（中心向上） */
+.pointer{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-138px);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-bottom:26px solid #111;
+  z-index:4;
 }
 
 /* 按钮 */
 .btn{
   width:100%;
+  margin-top:12px;
   padding:14px;
   border:none;
-  border-radius:14px;
-  font-size:15px;
+  border-radius:16px;
+  font-size:16px;
   font-weight:600;
 }
-.primary{background:#4f46e5;color:#fff}
-.secondary{background:#eef2ff;color:#4f46e5;margin-top:10px}
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#f1f5ff;color:#2563eb}
 
-/* 规则 */
-.rules{
+.link-box{
+  margin-top:10px;
   font-size:12px;
-  color:#64748b;
-  line-height:1.6;
+  color:#374151;
+  word-break:break-all;
+}
+
+/* iPhone 人品大爆发 */
+#boom{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle,#fde68a,#fb7185);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:999;
+}
+#boom h1{font-size:36px;color:#fff}
+#boom p{font-size:18px;color:#fff}
+.coin{
+  position:absolute;
+  width:26px;height:26px;
+  border-radius:50%;
+  background:gold;
+  animation:fall linear infinite;
+}
+@keyframes fall{
+  from{transform:translateY(-40px)}
+  to{transform:translateY(110vh)}
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="card">
+  <h1>联信资 · 助力转盘</h1>
+  <div class="sub">先帮好友助力，再发起自己的活动</div>
 
-  <div class="card">
-    <h1>联信资 · 新用户助力计划</h1>
-    <div class="sub">邀请好友完成助力，解锁对应奖励</div>
+  <div class="prize-box">
+    奖品：<span id="prizeText">未确定</span><br>
+    快邀请好友助力吧
   </div>
 
-  <div class="card">
-    <div class="prize-title" id="prizeText">等待助力解锁</div>
-
-    <div class="progress-text">
-      已完成 <b id="percent">0%</b>
-    </div>
-
-    <div class="progress">
-      <span id="progressBar"></span>
-    </div>
-
-    <div class="wheel-wrap">
-      <canvas id="wheel" width="260" height="260"></canvas>
-      <div class="indicator"></div>
-
-      <div class="center">
-        <!-- 🔥 换成你的 logo -->
-        <img src="logo.png">
-      </div>
+  <div class="wheel-wrap">
+    <canvas id="wheel" width="320" height="320"></canvas>
+    <div class="pointer"></div>
+    <div class="center">
+      <img src="logo.png">
     </div>
   </div>
 
-  <div class="card">
-    <button class="btn primary" id="btnCreate">发起助力</button>
-    <button class="btn secondary" id="btnHelp">帮好友助力</button>
-  </div>
+  <!-- 第一个按钮：帮好友 -->
+  <button class="btn secondary" id="btnHelp">帮助好友助力</button>
 
-  <div class="card rules">
-    <b>活动说明</b><br>
-    1. 每位用户仅可助力一次<br>
-    2. 达到助力进度后自动解锁奖励<br>
-    3. 实物奖励需完成实名认证领取<br>
-    4. 平台保留活动最终解释权
-  </div>
+  <!-- 第二个按钮：自己发起 -->
+  <button class="btn primary" id="btnCreate">发起助力试试</button>
 
+  <div class="link-box" id="linkBox"></div>
+</div>
+
+<div id="boom">
+  <h1>🎉 人品大爆发 🎉</h1>
+  <p>你抽中了 iPhone 17 Pro Max！</p>
 </div>
 
 <script>
-/* ===== 奖品配置 ===== */
-const PRIZES = [
-  {key:"66",label:"66元现金红包",color:"#f87171"},
-  {key:"88",label:"88元现金红包",color:"#fbbf24"},
-  {key:"168",label:"168元现金红包",color:"#34d399"},
-  {key:"388",label:"388元现金红包",color:"#60a5fa"},
+/* ========= Firebase 配置（填你自己的） ========= */
+const firebaseConfig = {
+      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
+      authDomain: "cut-demo-e11b9.firebaseapp.com",
+      projectId: "cut-demo-e11b9",
+      storageBucket: "cut-demo-e11b9.firebasestorage.app",
+      messagingSenderId: "1065166593402",
+      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
+};
+firebase.initializeApp(firebaseConfig);
+
+/* ========= 后端接口 ========= */
+const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
+
+/* ========= 奖品 ========= */
+const PRIZES=[
+  {key:"66",label:"红包66元",color:"#f87171"},
+  {key:"88",label:"红包88元",color:"#fbbf24"},
+  {key:"168",label:"红包168元",color:"#34d399"},
+  {key:"388",label:"红包388元",color:"#60a5fa"},
+  {key:"588",label:"红包588元",color:"#a78bfa"},
+  {key:"888",label:"红包888元",color:"#fb7185"},
   {key:"iphone",label:"iPhone 17 Pro Max",color:"#f97316"}
 ];
 
-/* ===== 画盘 ===== */
+/* ========= 画转盘 ========= */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-const R=130;
+const R=160;
 const step=2*Math.PI/PRIZES.length;
 
 PRIZES.forEach((p,i)=>{
@@ -200,59 +208,81 @@ PRIZES.forEach((p,i)=>{
   ctx.translate(R,R);
   ctx.rotate(i*step+step/2);
   ctx.fillStyle="#fff";
-  ctx.font="bold 13px sans-serif";
+  ctx.font="bold 14px sans-serif";
   ctx.textAlign="right";
-  ctx.fillText(p.label,R-12,6);
+  ctx.fillText(p.label,R-14,6);
   ctx.restore();
 });
 
 let angle=0;
-let percent=0;
-let unlocked=false;
+let activityId=new URLSearchParams(location.search).get("from");
 
-/* ===== 正确转到指定奖品 ===== */
 function spinTo(index){
   const per=360/PRIZES.length;
-  const target=index*per+per/2;
-  angle+=4*360-target+90;
+  const target=360-(index*per+per/2);
+  angle+=3*360+target;
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
-/* ===== 更新进度 ===== */
-function updateProgress(){
-  document.getElementById("percent").innerText=percent+"%";
-  document.getElementById("progressBar").style.width=percent+"%";
+function boom(){
+  const b=document.getElementById("boom");
+  b.style.display="flex";
+  for(let i=0;i<60;i++){
+    const c=document.createElement("div");
+    c.className="coin";
+    c.style.left=Math.random()*100+"%";
+    c.style.animationDuration=2+Math.random()*2+"s";
+    b.appendChild(c);
+  }
 }
 
-/* ===== 发起助力 ===== */
-document.getElementById("btnCreate").onclick=()=>{
-  percent=0;
-  unlocked=false;
-  updateProgress();
-  document.getElementById("prizeText").innerText="等待助力解锁";
+/* ===== 帮好友助力（第一个按钮） ===== */
+document.getElementById("btnHelp").onclick=async()=>{
+  if(!activityId){
+    alert("请通过好友分享链接进入");
+    return;
+  }
+
+  const res=await fetch(HELP_API,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({activityId})
+  });
+  const d=await res.json();
+  if(!d.success){
+    alert(d.error||"你已助过力了");
+    return;
+  }
+
+  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+  spinTo(idx);
+  document.getElementById("prizeText").innerText=PRIZES[idx].label;
+
+  if(d.prizeKey==="iphone") setTimeout(boom,2500);
 };
 
-/* ===== 帮好友助力 ===== */
-document.getElementById("btnHelp").onclick=()=>{
-  if(unlocked) return;
-
-  percent=Math.min(percent+20,100);
-  updateProgress();
-
-  if(percent===100){
-    unlocked=true;
-
-    // 🔥 后端返回的奖品 index（示例）
-    const prizeIndex=4; // iPhone
-
-    spinTo(prizeIndex);
-    document.getElementById("prizeText").innerText=
-      "恭喜解锁："+PRIZES[prizeIndex].label;
+/* ===== 自己发起助力（第二个按钮） ===== */
+document.getElementById("btnCreate").onclick=async()=>{
+  const res=await fetch(CREATE_API,{method:"POST"});
+  const d=await res.json();
+  if(!d.success){
+    alert("创建失败");
+    return;
   }
+
+  activityId=d.activityId;
+  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+  spinTo(idx);
+
+  document.getElementById("prizeText").innerText=PRIZES[idx].label;
+  document.getElementById("linkBox").innerText=
+    "分享链接："+location.origin+location.pathname+"?from="+activityId;
+
+  if(d.prizeKey==="iphone") setTimeout(boom,2500);
 };
 </script>
-
 </body>
 </html>
+
 
 
