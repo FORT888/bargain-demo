@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <style>
 body{
   margin:0;
@@ -18,7 +14,6 @@ body{
   justify-content:center;
   align-items:center;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-  overflow:hidden;
 }
 .card{
   width:92%;
@@ -53,7 +48,7 @@ canvas{
   transition:transform 3s cubic-bezier(.25,.9,.3,1);
 }
 
-/* 中心 LOGO */
+/* 中心 */
 .center{
   position:absolute;
   inset:50%;
@@ -61,17 +56,18 @@ canvas{
   width:150px;
   height:150px;
   border-radius:50%;
-  overflow:hidden;
+  background:#2563eb;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:700;
   box-shadow:0 10px 30px rgba(0,0,0,.25);
   z-index:3;
 }
-.center img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
 
-/* 指针（中心向上，略短于扇形） */
+/* 指针 */
 .pointer{
   position:absolute;
   left:50%;
@@ -104,7 +100,7 @@ canvas{
   word-break:break-all;
 }
 
-/* ===== iPhone 人品大爆发 ===== */
+/* 爆发 */
 #boom{
   position:fixed;
   inset:0;
@@ -115,14 +111,8 @@ canvas{
   flex-direction:column;
   z-index:999;
 }
-#boom h1{
-  font-size:36px;
-  color:#fff;
-}
-#boom p{
-  font-size:18px;
-  color:#fff;
-}
+#boom h1{font-size:36px;color:#fff}
+#boom p{font-size:18px;color:#fff}
 .coin{
   position:absolute;
   width:26px;
@@ -152,9 +142,7 @@ canvas{
   <div class="wheel-wrap">
     <canvas id="wheel" width="320" height="320"></canvas>
     <div class="pointer"></div>
-    <div class="center">
-      <img src="logo.png">
-    </div>
+    <div class="center">联信资</div>
   </div>
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
@@ -169,24 +157,7 @@ canvas{
 </div>
 
 <script>
-/* ================= Firebase 配置（这里填你的） ================= */
-const firebaseConfig = {
-      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-      authDomain: "cut-demo-e11b9.firebaseapp.com",
-      projectId: "cut-demo-e11b9",
-      storageBucket: "cut-demo-e11b9.firebasestorage.app",
-      messagingSenderId: "1065166593402",
-      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3""
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-/* ================= 后端接口 ================= */
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
-
-/* ================= 奖品表 ================= */
+/* 奖品 */
 const PRIZES = [
   {key:"66",label:"红包66元",color:"#f87171"},
   {key:"88",label:"红包88元",color:"#fbbf24"},
@@ -197,22 +168,22 @@ const PRIZES = [
   {key:"iphone",label:"iPhone 17 Pro Max",color:"#f97316"}
 ];
 
-/* ================= 画转盘 ================= */
-const canvas=document.getElementById("wheel");
-const ctx=canvas.getContext("2d");
-const R=160;
-const step=2*Math.PI/PRIZES.length;
+/* 画转盘 */
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const R = 160;
+const step = 2 * Math.PI / PRIZES.length;
 
 PRIZES.forEach((p,i)=>{
   ctx.beginPath();
   ctx.moveTo(R,R);
   ctx.arc(R,R,R,i*step,(i+1)*step);
-  ctx.fillStyle=p.color;
+  ctx.fillStyle = p.color;
   ctx.fill();
 
   ctx.save();
   ctx.translate(R,R);
-  ctx.rotate(i*step+step/2);
+  ctx.rotate(i*step + step/2);
   ctx.fillStyle="#fff";
   ctx.font="bold 14px sans-serif";
   ctx.textAlign="right";
@@ -220,23 +191,23 @@ PRIZES.forEach((p,i)=>{
   ctx.restore();
 });
 
-let angle=0;
-let activityId=new URLSearchParams(location.search).get("from");
+let angle = 0;
+let activityId = new URLSearchParams(location.search).get("from");
 
-/* ================= 转到指定奖品 ================= */
+/* 转动 */
 function spinTo(index){
-  const per=360/PRIZES.length;
-  const target=360-(index*per+per/2);
-  angle+=3*360+target;
-  canvas.style.transform=`rotate(${angle}deg)`;
+  const per = 360 / PRIZES.length;
+  const target = 360 - (index * per + per / 2);
+  angle += 3 * 360 + target;
+  canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ================= 人品大爆发 ================= */
+/* 爆发 */
 function boom(){
-  const b=document.getElementById("boom");
-  b.style.display="flex";
+  const b = document.getElementById("boom");
+  b.style.display = "flex";
   for(let i=0;i<60;i++){
-    const c=document.createElement("div");
+    const c = document.createElement("div");
     c.className="coin";
     c.style.left=Math.random()*100+"%";
     c.style.animationDuration=2+Math.random()*2+"s";
@@ -244,39 +215,27 @@ function boom(){
   }
 }
 
-/* ================= 发起助力 ================= */
-document.getElementById("btnCreate").onclick=async()=>{
-  const res=await fetch(CREATE_API,{method:"POST"});
-  const d=await res.json();
-  if(!d.success)return alert("失败");
-
-  activityId=d.activityId;
-  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+/* 模拟发起助力 */
+document.getElementById("btnCreate").onclick = ()=>{
+  activityId = Date.now().toString(36);
+  const idx = Math.random()<0.05 ? 6 : Math.floor(Math.random()*6);
   spinTo(idx);
-
-  document.getElementById("prizeText").innerText=PRIZES[idx].label;
-  document.getElementById("linkBox").innerText=
-    "分享链接："+location.origin+location.pathname+"?from="+activityId;
-
-  if(d.prizeKey==="iphone") setTimeout(boom,2500);
+  document.getElementById("prizeText").innerText = PRIZES[idx].label;
+  document.getElementById("linkBox").innerText =
+    "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+  if(PRIZES[idx].key==="iphone") setTimeout(boom,2500);
 };
 
-/* ================= 帮好友助力 ================= */
-document.getElementById("btnHelp").onclick=async()=>{
-  if(!activityId)return alert("请通过分享链接进入");
-  const res=await fetch(HELP_API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({activityId})
-  });
-  const d=await res.json();
-  if(!d.success)return alert(d.error||"失败");
-
-  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+/* 模拟助力 */
+document.getElementById("btnHelp").onclick = ()=>{
+  if(!activityId) return alert("请通过分享链接进入");
+  const idx = Math.floor(Math.random()*PRIZES.length);
   spinTo(idx);
-  document.getElementById("prizeText").innerText=PRIZES[idx].label;
-  if(d.prizeKey==="iphone") setTimeout(boom,2500);
+  document.getElementById("prizeText").innerText = PRIZES[idx].label;
+  if(PRIZES[idx].key==="iphone") setTimeout(boom,2500);
 };
 </script>
+
 </body>
 </html>
+
