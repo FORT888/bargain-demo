@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
 body{
   margin:0;
@@ -24,7 +28,6 @@ body{
   padding:20px 16px 26px;
   box-shadow:0 24px 60px rgba(0,0,0,.12);
   text-align:center;
-  z-index:1;
 }
 h1{font-size:22px;margin:6px 0}
 .sub{font-size:13px;color:#6b7280}
@@ -68,7 +71,7 @@ canvas{
   object-fit:cover;
 }
 
-/* 指针（中间向上） */
+/* 指针（中心向上，略短于扇形） */
 .pointer{
   position:absolute;
   left:50%;
@@ -101,28 +104,25 @@ canvas{
   word-break:break-all;
 }
 
-/* ===== 人品大爆发全屏 ===== */
+/* ===== iPhone 人品大爆发 ===== */
 #boom{
   position:fixed;
   inset:0;
-  background:radial-gradient(circle,#ffedd5,#fb7185);
+  background:radial-gradient(circle,#fde68a,#fb7185);
   display:none;
   justify-content:center;
   align-items:center;
   flex-direction:column;
   z-index:999;
-  animation:pop 0.6s ease;
 }
 #boom h1{
   font-size:36px;
   color:#fff;
-  margin-bottom:10px;
 }
 #boom p{
   font-size:18px;
   color:#fff;
 }
-
 .coin{
   position:absolute;
   width:26px;
@@ -131,14 +131,9 @@ canvas{
   background:gold;
   animation:fall linear infinite;
 }
-
 @keyframes fall{
-  from{transform:translateY(-50px)}
+  from{transform:translateY(-40px)}
   to{transform:translateY(110vh)}
-}
-@keyframes pop{
-  from{transform:scale(.7);opacity:0}
-  to{transform:scale(1);opacity:1}
 }
 </style>
 </head>
@@ -168,19 +163,31 @@ canvas{
   <div class="link-box" id="linkBox"></div>
 </div>
 
-<!-- 人品大爆发 -->
 <div id="boom">
   <h1>🎉 人品大爆发 🎉</h1>
   <p>你抽中了 iPhone 17 Pro Max！</p>
 </div>
 
 <script>
-/* ===== 接口 ===== */
-const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
+/* ================= Firebase 配置（这里填你的） ================= */
+const firebaseConfig = {
+      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
+      authDomain: "cut-demo-e11b9.firebaseapp.com",
+      projectId: "cut-demo-e11b9",
+      storageBucket: "cut-demo-e11b9.firebasestorage.app",
+      messagingSenderId: "1065166593402",
+      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3""
+};
 
-/* ===== 奖品 ===== */
-const PRIZES=[
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ================= 后端接口 ================= */
+const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+
+/* ================= 奖品表 ================= */
+const PRIZES = [
   {key:"66",label:"红包66元",color:"#f87171"},
   {key:"88",label:"红包88元",color:"#fbbf24"},
   {key:"168",label:"红包168元",color:"#34d399"},
@@ -190,6 +197,7 @@ const PRIZES=[
   {key:"iphone",label:"iPhone 17 Pro Max",color:"#f97316"}
 ];
 
+/* ================= 画转盘 ================= */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=160;
@@ -215,6 +223,7 @@ PRIZES.forEach((p,i)=>{
 let angle=0;
 let activityId=new URLSearchParams(location.search).get("from");
 
+/* ================= 转到指定奖品 ================= */
 function spinTo(index){
   const per=360/PRIZES.length;
   const target=360-(index*per+per/2);
@@ -222,6 +231,7 @@ function spinTo(index){
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
+/* ================= 人品大爆发 ================= */
 function boom(){
   const b=document.getElementById("boom");
   b.style.display="flex";
@@ -234,6 +244,7 @@ function boom(){
   }
 }
 
+/* ================= 发起助力 ================= */
 document.getElementById("btnCreate").onclick=async()=>{
   const res=await fetch(CREATE_API,{method:"POST"});
   const d=await res.json();
@@ -247,14 +258,15 @@ document.getElementById("btnCreate").onclick=async()=>{
   document.getElementById("linkBox").innerText=
     "分享链接："+location.origin+location.pathname+"?from="+activityId;
 
-  if(d.prizeKey==="iphone") setTimeout(boom,2800);
+  if(d.prizeKey==="iphone") setTimeout(boom,2500);
 };
 
+/* ================= 帮好友助力 ================= */
 document.getElementById("btnHelp").onclick=async()=>{
   if(!activityId)return alert("请通过分享链接进入");
   const res=await fetch(HELP_API,{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({activityId})
   });
   const d=await res.json();
@@ -263,9 +275,8 @@ document.getElementById("btnHelp").onclick=async()=>{
   const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
   spinTo(idx);
   document.getElementById("prizeText").innerText=PRIZES[idx].label;
-  if(d.prizeKey==="iphone") setTimeout(boom,2800);
+  if(d.prizeKey==="iphone") setTimeout(boom,2500);
 };
 </script>
 </body>
 </html>
-
