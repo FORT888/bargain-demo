@@ -30,7 +30,6 @@ body{
 }
 h1{margin:6px 0;font-size:22px}
 
-/* 奖品文案 */
 .prize-box{
   margin:10px 0 14px;
   font-size:15px;
@@ -39,7 +38,6 @@ h1{margin:6px 0;font-size:22px}
 .prize-box span{color:#dc2626}
 .prize-tip{font-size:12px;color:#6b7280}
 
-/* 转盘 */
 .wheel-wrap{
   position:relative;
   width:300px;
@@ -67,7 +65,6 @@ canvas{
   object-fit:cover;
 }
 
-/* 概率进度条 */
 .progress-wrap{margin:6px 0 10px}
 .progress-bar{
   height:14px;
@@ -88,7 +85,6 @@ canvas{
   color:#b91c1c;
 }
 
-/* 按钮 */
 .btn{
   width:100%;
   margin-top:10px;
@@ -102,7 +98,6 @@ canvas{
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
 
-/* 分享链接 */
 .link{
   margin-top:8px;
   font-size:12px;
@@ -127,12 +122,11 @@ canvas{
     <div class="center"><img src="logo.png"></div>
   </div>
 
-  <!-- 概率进度条（后端给） -->
   <div class="progress-wrap">
     <div class="progress-bar">
       <div class="progress-inner" id="progressInner"></div>
     </div>
-    <div class="progress-text" id="progressText">成功概率 0%</div>
+    <div class="progress-text" id="progressText">完成进度 0%</div>
   </div>
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
@@ -150,7 +144,7 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ========== deviceToken ========== */
+/* ========== deviceToken（稳定） ========== */
 function getDeviceToken(){
   let t = localStorage.getItem("deviceToken");
   if(!t){
@@ -165,19 +159,17 @@ const deviceToken = getDeviceToken();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ========== 奖品 & 颜色 ========== */
+/* ========== 奖品（仅展示） ========== */
 const PRIZES=[
   {key:"66",label:"红包66元"},
-  {key:"88",label:"红包88元"},
-  {key:"168",label:"红包168元"},
   {key:"388",label:"红包388元"},
   {key:"588",label:"红包588元"},
   {key:"888",label:"红包888元"},
   {key:"iphone",label:"iPhone 17 Pro Max"}
 ];
-const COLORS=["#ef4444","#f97316","#facc15","#22c55e","#06b6d4","#3b82f6","#8b5cf6"];
+const COLORS=["#ef4444","#f97316","#facc15","#22c55e","#3b82f6"];
 
-/* ========== 绘制转盘（只用于展示） ========== */
+/* ========== 绘制转盘（展示用） ========== */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=150;
@@ -200,46 +192,41 @@ PRIZES.forEach((p,i)=>{
   ctx.restore();
 });
 
-let angle=0;
-function spinTo(index){
-  angle += 1440 + index*(360/PRIZES.length);
-  canvas.style.transform = `rotate(${angle}deg)`;
-}
-
-/* ========== 实时监听（只读后端概率） ========== */
-function watchActivity(activityId){
-  db.collection("activities").doc(activityId).onSnapshot(snap=>{
-    if(!snap.exists) return;
-    const d = snap.data();
-
-    // 奖品
-    const prize = PRIZES.find(p=>p.key===d.prizeKey);
-    if(prize) document.getElementById("prizeText").innerText = prize.label;
-
-    // 概率（后端给）
-    const percent = Math.min(100, d.probabilityPercent || 0);
-    document.getElementById("progressInner").style.width = percent + "%";
-    document.getElementById("progressText").innerText =
-      percent >= 100
-        ? "成功概率 100%"
-        : `成功概率 ${percent.toFixed(1)}%`;
-  });
-}
-
-/* ========== activityId 初始化（from > localStorage） ========== */
+/* ========== 安全读取 from ========== */
 const params = new URLSearchParams(location.search);
-const fromId = params.get("from");
+let fromId = params.get("from");
+
+if(!fromId || fromId==="undefined" || fromId==="null"){
+  fromId = null;
+}
 
 let activityId = fromId || localStorage.getItem("activityId");
 
-// 只有自己发起的才写本地
-if(!fromId && activityId){
-  localStorage.setItem("activityId", activityId);
+/* ========== 实时监听 ========== */
+function watchActivity(id){
+  db.collection("activities").doc(id).onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const d = snap.data();
+
+    const prize = PRIZES.find(p=>p.key===d.prizeKey);
+    if(prize) document.getElementById("prizeText").innerText = prize.label;
+
+    const percent = Math.min(100, d.progress || 0);
+    document.getElementById("progressInner").style.width = percent + "%";
+    document.getElementById("progressText").innerText =
+      percent >= 100 ? "完成进度 100%" : `完成进度 ${percent.toFixed(1)}%`;
+
+    if(percent >= 100){
+      document.getElementById("btnHelp").disabled = true;
+      document.getElementById("btnCreate").disabled = true;
+    }
+  });
 }
 
 if(activityId){
   watchActivity(activityId);
   if(!fromId){
+    localStorage.setItem("activityId", activityId);
     document.getElementById("linkBox").innerText =
       "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
   }
@@ -247,39 +234,63 @@ if(activityId){
 
 /* ========== 发起助力 ========== */
 document.getElementById("btnCreate").onclick = async ()=>{
-  const r = await fetch(CREATE_API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ deviceToken })
-  });
-  const d = await r.json();
+  const btn = document.getElementById("btnCreate");
+  btn.disabled = true;
 
-  activityId = d.activityId;
-  localStorage.setItem("activityId", activityId);
+  try{
+    const res = await fetch(CREATE_API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ deviceToken })
+    });
+    const d = await res.json();
+    if(!d.success) throw new Error(d.error || "创建失败");
 
-  const index = PRIZES.findIndex(p=>p.key===d.prizeKey);
-  if(index>=0) spinTo(index);
+    activityId = d.activityId;
+    localStorage.setItem("activityId", activityId);
 
-  document.getElementById("linkBox").innerText =
-    "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+    history.replaceState(null,"",
+      location.pathname + "?from=" + activityId
+    );
 
-  watchActivity(activityId);
+    watchActivity(activityId);
+
+    document.getElementById("linkBox").innerText =
+      "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false;
+  }
 };
 
 /* ========== 帮助好友 ========== */
 document.getElementById("btnHelp").onclick = async ()=>{
-  if(!activityId) return alert("请通过好友分享链接进入");
+  if(!activityId){
+    alert("请通过好友分享链接进入");
+    return;
+  }
 
-  const r = await fetch(HELP_API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ activityId, deviceToken })
-  });
-  const d = await r.json();
+  const btn = document.getElementById("btnHelp");
+  btn.disabled = true;
 
-  if(!d.success) alert(d.error || "你已助过力");
+  try{
+    const res = await fetch(HELP_API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ activityId, deviceToken })
+    });
+    const d = await res.json();
+    if(!d.success) throw new Error(d.error || "你已助过力");
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false;
+  }
 };
 </script>
 
 </body>
 </html>
+
