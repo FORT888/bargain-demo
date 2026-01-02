@@ -1,227 +1,206 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-  <title>联信资 · 助力进度</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>联信资 · 助力活动</title>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      background: #f6f8fb;
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#f6f8fb;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif
+}
+.card{
+  width:92%;
+  max-width:420px;
+  background:#fff;
+  border-radius:26px;
+  padding:28px;
+  box-shadow:0 20px 50px rgba(0,0,0,.1);
+  text-align:center
+}
+h1{margin:8px 0 4px;font-size:20px}
+.sub{font-size:13px;color:#6b7280;margin-bottom:16px}
 
-    .card {
-      width: 92%;
-      max-width: 420px;
-      background: #fff;
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: 0 20px 50px rgba(0,0,0,.1);
-      text-align: center;
-    }
+/* 转盘 */
+.wheel-box{
+  position:relative;
+  width:260px;
+  height:260px;
+  margin:0 auto 14px
+}
+.wheel{
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  background:conic-gradient(
+    #34d399 0% 50%,
+    #fbbf24 50% 95%,
+    #ef4444 95% 100%
+  );
+  transition:transform 2.8s cubic-bezier(.25,.8,.25,1)
+}
+.center{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:96px;
+  height:96px;
+  border-radius:50%;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.15)
+}
+.center img{
+  width:64px;
+  height:64px;
+  object-fit:contain
+}
+.pointer{
+  position:absolute;
+  top:-10px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-bottom:20px solid #111827
+}
 
-    h1 {
-      font-size: 20px;
-      margin-bottom: 6px;
-    }
+.percent{
+  font-size:18px;
+  font-weight:600;
+  color:#2563eb;
+  margin-bottom:12px
+}
 
-    .sub {
-      font-size: 13px;
-      color: #6b7280;
-      margin-bottom: 16px;
-    }
+.btn{
+  width:100%;
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  font-size:16px;
+  font-weight:600;
+  margin-top:10px;
+  cursor:pointer
+}
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#eef2ff;color:#2563eb}
 
-    /* ===== 转盘 ===== */
-    .wheel-box {
-      position: relative;
-      width: 260px;
-      height: 260px;
-      margin: 0 auto 16px;
-    }
-
-    .wheel {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background:
-        conic-gradient(
-          #34d399 0% 50%,
-          #fbbf24 50% 95%,
-          #ef4444 95% 100%
-        );
-      transition: transform 2.8s cubic-bezier(.25,.8,.25,1);
-    }
-
-    .pointer {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-bottom: 20px solid #111827;
-    }
-
-    .percent {
-      font-size: 18px;
-      font-weight: 600;
-      color: #2563eb;
-      margin-bottom: 14px;
-    }
-
-    .btn {
-      width: 100%;
-      border: none;
-      border-radius: 16px;
-      padding: 14px;
-      font-size: 16px;
-      font-weight: 600;
-      margin-top: 10px;
-      cursor: pointer;
-    }
-
-    .primary {
-      background: #2563eb;
-      color: #fff;
-    }
-
-    .secondary {
-      background: #eef2ff;
-      color: #2563eb;
-    }
-
-    .hint {
-      margin-top: 12px;
-      font-size: 12px;
-      color: #6b7280;
-      line-height: 1.5;
-    }
-  </style>
+.hint{
+  margin-top:12px;
+  font-size:12px;
+  color:#6b7280;
+  line-height:1.5
+}
+</style>
 </head>
 
 <body>
 <div class="card">
-  <h1>联信资 · 助力进度</h1>
-  <div class="sub">每次助力都会推动转盘</div>
+  <h1>联信资 · 助力活动</h1>
+  <div class="sub">邀请好友助力，推动进度完成奖励</div>
 
   <div class="wheel-box">
     <div class="pointer"></div>
     <div class="wheel" id="wheel"></div>
+    <div class="center">
+      <img src="logo.png">
+    </div>
   </div>
 
-  <div class="percent" id="percentText">当前进度：0%</div>
+  <div class="percent" id="percent">当前进度：0%</div>
 
-  <button class="btn secondary" id="btnHelp">帮好友助力</button>
-  <button class="btn primary" id="btnCreate">发起助力</button>
+  <button class="btn secondary" id="helpBtn">帮好友助力</button>
+  <button class="btn primary" id="createBtn">发起助力</button>
 
-  <div class="hint" id="hintText">
-    转盘仅展示助力进度变化
+  <div class="hint" id="hint">
+    每位好友仅可助力一次<br>
+    转盘仅展示进度变化
   </div>
 </div>
 
 <script>
-  /******** Firebase 配置（你自己的） ********/
-  const firebaseConfig = {
+/* Firebase */
+firebase.initializeApp({
       apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
       authDomain: "cut-demo-e11b9.firebaseapp.com",
       projectId: "cut-demo-e11b9",
       storageBucket: "cut-demo-e11b9.firebasestorage.app",
       messagingSenderId: "1065166593402",
       appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+});
+const db=firebase.firestore();
 
-  /******** 后端接口（你刚部署的） ********/
-  const GET_UID_API = "https://getuid-23p22ouguq-uc.a.run.app";
-  const HELP_API = "https://helpactivity-23p22ouguq-uc.a.run.app";
+/* 接口 */
+const GET_UID_API="https://getuid-23p22ouguq-uc.a.run.app";
+const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-  let uid = null;
-  let currentAngle = 0;
+/* UID */
+async function getUid(){
+  let u=localStorage.getItem("uid");
+  if(u)return u;
+  let r=await fetch(GET_UID_API);
+  let d=await r.json();
+  localStorage.setItem("uid",d.uid);
+  return d.uid
+}
+let uid=null;
+getUid().then(u=>uid=u);
 
-  async function getUid() {
-    let u = localStorage.getItem("uid");
-    if (u) return u;
-    const res = await fetch(GET_UID_API);
-    const data = await res.json();
-    localStorage.setItem("uid", data.uid);
-    return data.uid;
-  }
+/* 转盘 */
+let angle=0;
+function rotate(p,first){
+  angle=(first?1080:720)+p*3.6;
+  wheel.style.transform=`rotate(${angle}deg)`;
+  percent.innerText=`当前进度：${p.toFixed(2)}%`
+}
 
-  getUid().then(u => uid = u);
+/* 活动 */
+const params=new URLSearchParams(location.search);
+const activityId=params.get("from");
 
-  const params = new URLSearchParams(location.search);
-  const activityId = params.get("from");
+async function load(id,first){
+  let s=await db.collection("activities").doc(id).get();
+  if(!s.exists)return;
+  rotate(s.data().progress||0,first)
+}
 
-  function rotateToProgress(progress, first = false) {
-    const angle = progress * 3.6;
-    const extra = first ? 1080 : 720;
-    currentAngle = extra + angle;
-    document.getElementById("wheel").style.transform =
-      `rotate(${currentAngle}deg)`;
-    document.getElementById("percentText").innerText =
-      `当前进度：${progress.toFixed(2)}%`;
-  }
+createBtn.onclick=async()=>{
+  if(!uid)return alert("初始化中");
+  let r=await db.collection("activities").add({
+    owner:uid,helperCount:0,progress:0,finished:false,createdAt:Date.now()
+  });
+  hint.innerText="分享链接给好友助力：\n"+location.origin+location.pathname+"?from="+r.id;
+  load(r.id,true)
+};
 
-  async function loadActivity(id, first = false) {
-    const snap = await db.collection("activities").doc(id).get();
-    if (!snap.exists) return;
-    rotateToProgress(snap.data().progress || 0, first);
-  }
+helpBtn.onclick=async()=>{
+  if(!activityId)return alert("请通过好友分享链接进入");
+  let r=await fetch(HELP_API,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({activityId,uid})
+  });
+  let d=await r.json();
+  d.success?load(activityId):alert(d.error||"你已助过力了")
+};
 
-  document.getElementById("btnCreate").onclick = async () => {
-    if (!uid) return alert("初始化中，请稍后");
-
-    const ref = await db.collection("activities").add({
-      owner: uid,
-      helperCount: 0,
-      progress: 0,
-      finished: false,
-      createdAt: Date.now()
-    });
-
-    const link = location.origin + location.pathname + "?from=" + ref.id;
-    document.getElementById("hintText").innerText =
-      "分享链接给好友助力：\n" + link;
-
-    loadActivity(ref.id, true);
-  };
-
-  document.getElementById("btnHelp").onclick = async () => {
-    if (!activityId) {
-      alert("请通过好友分享链接进入");
-      return;
-    }
-    if (!uid) return;
-
-    const res = await fetch(HELP_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activityId, uid })
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      loadActivity(activityId);
-    } else {
-      alert(data.error || "你已助过力了");
-    }
-  };
-
-  if (activityId) loadActivity(activityId, true);
+if(activityId)load(activityId,true);
 </script>
 </body>
 </html>
+
 
