@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -23,246 +23,213 @@ body{
   max-width:420px;
   background:#fff;
   border-radius:28px;
-  padding:20px 14px 26px;
+  padding:20px 16px 26px;
   box-shadow:0 24px 60px rgba(0,0,0,.12);
   text-align:center;
 }
-h1{margin:6px 0;font-size:22px}
+h1{font-size:22px;margin:6px 0}
 .sub{font-size:13px;color:#6b7280}
 
-/* ===== 转盘 ===== */
+.prize-box{
+  margin:10px 0;
+  font-size:15px;
+  font-weight:600;
+}
+.prize-box span{
+  color:#e11d48;
+}
+
+/* 转盘 */
 .wheel-wrap{
   position:relative;
   width:320px;
   height:320px;
   margin:14px auto;
 }
-.wheel{
+#wheel{
   width:100%;
   height:100%;
   border-radius:50%;
-  transition:transform 2.8s cubic-bezier(.25,.9,.3,1);
+  transition:transform 3s cubic-bezier(.25,.9,.3,1);
 }
 
-/* ===== 指针 ===== */
+/* 指针 */
 .pointer{
   position:absolute;
-  top:-4px;
+  top:-6px;
   left:50%;
   transform:translateX(-50%);
   width:0;height:0;
   border-left:10px solid transparent;
   border-right:10px solid transparent;
-  border-bottom:28px solid #111;
-  z-index:5;
+  border-bottom:30px solid #111;
+  z-index:3;
 }
 
-/* ===== 中心 LOGO ===== */
+/* 中心 LOGO */
 .center{
   position:absolute;
   inset:0;
   display:flex;
   justify-content:center;
   align-items:center;
-  z-index:4;
 }
-.center-btn{
-  width:150px;
-  height:150px;
-  border-radius:50%;
-  background:#fff;
-  box-shadow:
-    inset 0 8px 16px rgba(255,255,255,.9),
-    inset 0 -12px 24px rgba(0,0,0,.15),
-    0 18px 36px rgba(0,0,0,.25);
-  cursor:pointer;
-}
-.center-btn img{
-  width:100%;
-  height:100%;
+.center img{
+  width:140px;
+  height:140px;
   border-radius:50%;
   object-fit:cover;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  background:#fff;
 }
 
-/* ===== 文字 ===== */
-.percent{
-  font-size:18px;
-  font-weight:700;
-  color:#2563eb;
-}
-.hint{
-  margin-top:6px;
-  font-size:13px;
-  color:#6b7280;
-}
-
-/* ===== 按钮 ===== */
+/* 按钮 */
 .btn{
   width:100%;
-  margin-top:14px;
+  margin-top:12px;
   padding:14px;
   border:none;
   border-radius:16px;
   font-size:16px;
   font-weight:600;
-  background:#2563eb;
-  color:#fff;
   cursor:pointer;
 }
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#f1f5ff;color:#2563eb}
 </style>
 </head>
 
 <body>
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
-  <div class="sub">点击中间按钮即可帮好友助力</div>
+  <div class="sub">邀请好友助力，达到条件必得奖品</div>
+
+  <div class="prize-box">
+    奖品：<span id="prizeText">未确定</span><br>
+    快邀请好友助力吧
+  </div>
 
   <div class="wheel-wrap">
     <div class="pointer"></div>
-    <canvas id="wheel" class="wheel" width="320" height="320"></canvas>
+    <canvas id="wheel" width="320" height="320"></canvas>
     <div class="center">
-      <div class="center-btn" id="centerBtn">
-        <img src="logo.png">
-      </div>
+      <img src="logo.png">
     </div>
   </div>
 
-  <div class="percent" id="percentText">当前进度：0%</div>
-  <div class="hint" id="hintText">点击中间按钮帮好友助力</div>
-
-  <button class="btn" id="btnCreate">发起助力试试</button>
+  <button class="btn secondary" id="btnHelp">帮助好友助力</button>
+  <button class="btn primary" id="btnCreate">发起助力试试</button>
 </div>
 
 <script>
 /* ===== Firebase ===== */
 firebase.initializeApp({
-  apiKey:"你的",
-  authDomain:"你的",
-  projectId:"你的",
-  storageBucket:"你的",
-  messagingSenderId:"你的",
-  appId:"你的"
+      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
+      authDomain: "cut-demo-e11b9.firebaseapp.com",
+      projectId: "cut-demo-e11b9",
+      storageBucket: "cut-demo-e11b9.firebasestorage.app",
+      messagingSenderId: "1065166593402",
+      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
 });
-const db=firebase.firestore();
 
-/* ===== 后端 ===== */
-const HELP_API="你的 helpActivity 地址";
-const GET_UID_API="你的 getUid 地址";
+/* ===== 接口 ===== */
+const CREATE_API="https://us-central1-cut-demo-e11b9.cloudfunctions.net/createActivity";
+const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
 /* ===== UID ===== */
-let uid=null;
-async function initUid(){
-  let u=localStorage.getItem("uid");
-  if(u){uid=u;return}
-  const r=await fetch(GET_UID_API);
-  const d=await r.json();
-  uid=d.uid;
+let uid=localStorage.getItem("uid");
+if(!uid){
+  uid="u_"+Math.random().toString(36).slice(2);
   localStorage.setItem("uid",uid);
 }
-initUid();
 
-/* ===== 活动 ===== */
-const params=new URLSearchParams(location.search);
-const activityId=params.get("from");
-let progress=0;
-let angle=0;
+/* ===== 奖品 & 转盘 ===== */
+const prizeMap=[
+  {key:"66",label:"红包66元"},
+  {key:"88",label:"红包88元"},
+  {key:"168",label:"红包168元"},
+  {key:"388",label:"红包388元"},
+  {key:"588",label:"红包588元"},
+  {key:"888",label:"红包888元"},
+  {key:"iphone",label:"iPhone 17 Pro Max"}
+];
 
-/* ===== 转盘配置 ===== */
-const slices=[
-  {p:0,color:"#22c55e"},
-  {p:8,color:"#16a34a"},
-  {p:16,color:"#4ade80"},
-  {p:24,color:"#facc15"},
-  {p:32,color:"#fbbf24"},
-  {p:40,color:"#fde047"},
-  {p:48,color:"#fb7185"},
-  {p:56,color:"#f87171"},
-  {p:64,color:"#60a5fa"},
-  {p:72,color:"#38bdf8"},
-  {p:80,color:"#818cf8"},
-  {p:88,color:"#a78bfa"},
-  {p:95,color:"#f472b6"},
-  {p:99,color:"#fb7185"},
-  {p:100,color:"#ef4444"} // 完成
+const colors=[
+  "#22c55e","#facc15","#fb7185",
+  "#60a5fa","#a78bfa","#f97316","#ef4444"
 ];
 
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=160;
+const step=2*Math.PI/prizeMap.length;
 
 function drawWheel(){
-  const step=2*Math.PI/slices.length;
-  slices.forEach((s,i)=>{
-    const start=i*step;
-    const end=start+step;
+  prizeMap.forEach((p,i)=>{
     ctx.beginPath();
     ctx.moveTo(R,R);
-    ctx.arc(R,R,R,start,end);
-    ctx.fillStyle=s.color;
+    ctx.arc(R,R,R,i*step,(i+1)*step);
+    ctx.fillStyle=colors[i];
     ctx.fill();
 
     ctx.save();
     ctx.translate(R,R);
-    ctx.rotate(start+step/2);
-    ctx.textAlign="right";
+    ctx.rotate(i*step+step/2);
     ctx.fillStyle="#fff";
     ctx.font="bold 14px sans-serif";
-    ctx.fillText(s.p+"%",R-12,6);
+    ctx.textAlign="right";
+    ctx.fillText(p.label,R-12,6);
     ctx.restore();
   });
 }
 drawWheel();
 
-function rotateToProgress(p){
-  const idx=slices.findIndex(s=>s.p>=p);
-  const step=360/slices.length;
-  angle+=720+idx*step;
+/* ===== 状态 ===== */
+let activityId=new URLSearchParams(location.search).get("from");
+let angle=0;
+
+/* ===== 发起助力 ===== */
+document.getElementById("btnCreate").onclick=async()=>{
+  const res=await fetch(CREATE_API,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid})
+  });
+  const data=await res.json();
+  if(!data.success)return alert("创建失败");
+
+  activityId=data.activityId;
+  document.getElementById("prizeText").innerText=data.prizeName;
+
+  angle+=720+Math.random()*360;
   canvas.style.transform=`rotate(${angle}deg)`;
-  document.getElementById("percentText").innerText="当前进度："+p.toFixed(2)+"%";
-}
 
-async function loadActivity(){
-  if(!activityId)return;
-  const s=await db.collection("activities").doc(activityId).get();
-  if(!s.exists)return;
-  progress=s.data().progress||0;
-  rotateToProgress(progress);
-}
-if(activityId)loadActivity();
+  alert("分享链接给好友助力吧！");
+};
 
-/* ===== 点击中心助力 ===== */
-document.getElementById("centerBtn").onclick=async()=>{
-  if(!activityId||!uid)return;
-  rotateToProgress(progress+Math.random()*2);
-  const r=await fetch(HELP_API,{
+/* ===== 帮助好友助力 ===== */
+document.getElementById("btnHelp").onclick=async()=>{
+  if(!activityId)return alert("请通过好友链接进入");
+
+  angle+=720+Math.random()*360;
+  canvas.style.transform=`rotate(${angle}deg)`;
+
+  const res=await fetch(HELP_API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({activityId,uid})
   });
-  const d=await r.json();
-  if(d.success){
-    setTimeout(loadActivity,600);
-  }else{
-    alert(d.error||"你已助过力了");
-  }
-};
+  const data=await res.json();
+  if(!data.success)return alert(data.error||"助力失败");
 
-/* ===== 发起 ===== */
-document.getElementById("btnCreate").onclick=async()=>{
-  if(!uid)return;
-  const ref=await db.collection("activities").add({
-    owner:uid,helperCount:0,progress:0,finished:false,createdAt:Date.now()
-  });
-  const link=location.origin+location.pathname+"?from="+ref.id;
-  document.getElementById("hintText").innerText="分享链接："+link;
+  document.getElementById("prizeText").innerText=data.prizeName;
+
+  if(data.finished&&data.prizeKey==="iphone"){
+    setTimeout(()=>{
+      alert("🎉🎉🎉 人品大爆发！你获得了 iPhone！");
+    },800);
+  }
 };
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
