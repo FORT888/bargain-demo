@@ -125,7 +125,7 @@
   </div>
 
   <script>
-    /******** Firebase 配置（你自己的） ********/
+    /******** Firebase 配置 ********/
     const firebaseConfig = {
       apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
       authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -156,6 +156,16 @@
     const params = new URLSearchParams(location.search);
     const activityId = params.get("from");
 
+    /******** 设备标识（防刷用） ********/
+    function getDeviceId() {
+      return btoa(
+        navigator.userAgent +
+        screen.width +
+        screen.height +
+        navigator.language
+      );
+    }
+
     /******** 发起助力 ********/
     document.getElementById("btnCreate").onclick = async () => {
       const ref = await db.collection("activities").add({
@@ -175,7 +185,7 @@
       loadActivity(ref.id);
     };
 
-    /******** 帮好友助力（走后端算力） ********/
+    /******** 帮好友助力（走后端算力 + 防刷） ********/
     document.getElementById("btnHelp").onclick = async () => {
       if (!activityId) {
         alert("请通过好友分享链接进入");
@@ -187,7 +197,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           activityId,
-          helperId: uid
+          helperId: uid,
+          deviceId: getDeviceId()
         })
       });
 
