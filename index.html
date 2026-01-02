@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>联信资 · 助力转盘</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -14,11 +15,12 @@ body{
   margin:0;
   min-height:100vh;
   background:radial-gradient(circle at top,#fff7ed,#fee2e2);
-  font-family:"Comic Sans MS","PingFang SC","Microsoft YaHei",sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
   display:flex;
   justify-content:center;
   align-items:center;
 }
+
 .card{
   width:92%;
   max-width:420px;
@@ -28,6 +30,7 @@ body{
   box-shadow:0 30px 80px rgba(0,0,0,.15);
   text-align:center;
 }
+
 h1{margin:6px 0;font-size:22px}
 
 .prize-box{
@@ -38,33 +41,24 @@ h1{margin:6px 0;font-size:22px}
 .prize-box span{color:#dc2626}
 .prize-tip{font-size:12px;color:#6b7280}
 
+/* ===== 转盘（使用你自己的图片） ===== */
 .wheel-wrap{
-  position:relative;
   width:300px;
   height:300px;
   margin:0 auto 16px;
-}
-canvas{
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  transition:transform 3.5s cubic-bezier(.25,.9,.3,1);
-}
-.center{
-  position:absolute;
-  inset:50%;
-  transform:translate(-50%,-50%);
-  width:140px;
-  height:140px;
-  border-radius:50%;
-  overflow:hidden;
-}
-.center img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
+  position:relative;
 }
 
+#wheelImg{
+  width:100%;
+  height:100%;
+  display:block;
+  border-radius:50%;
+  transform-origin:50% 50%;
+  transition:transform 3.5s cubic-bezier(.25,.9,.3,1);
+}
+
+/* ===== 进度条 ===== */
 .progress-wrap{margin:6px 0 10px}
 .progress-bar{
   height:14px;
@@ -85,6 +79,7 @@ canvas{
   color:#b91c1c;
 }
 
+/* ===== 按钮 ===== */
 .btn{
   width:100%;
   margin-top:10px;
@@ -117,11 +112,12 @@ canvas{
     <span class="prize-tip">快邀请好友助力吧</span>
   </div>
 
+  <!-- 转盘图片 -->
   <div class="wheel-wrap">
-    <canvas id="wheel" width="300" height="300"></canvas>
-    <div class="center"><img src="logo.png"></div>
+    <img id="wheelImg" src="wheel.png" />
   </div>
 
+  <!-- 完成进度 -->
   <div class="progress-wrap">
     <div class="progress-bar">
       <div class="progress-inner" id="progressInner"></div>
@@ -136,7 +132,7 @@ canvas{
 </div>
 
 <script>
-/* ========== Firebase ========== */
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain:"cut-demo-e11b9.firebaseapp.com",
@@ -144,7 +140,11 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ========== deviceToken（稳定） ========== */
+/* ================= API ================= */
+const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+
+/* ================= 设备标识 ================= */
 function getDeviceToken(){
   let t = localStorage.getItem("deviceToken");
   if(!t){
@@ -155,66 +155,44 @@ function getDeviceToken(){
 }
 const deviceToken = getDeviceToken();
 
-/* ========== API ========== */
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+/* ================= 奖品映射（仅展示用） ================= */
+const PRIZE_LABEL = {
+  "66":"红包66元",
+  "88":"红包88元",
+  "388":"红包388元",
+  "588":"红包588元",
+  "888":"红包888元",
+  "1888":"红包1888元",
+  "iphone":"iPhone 17 Pro Max"
+};
 
-/* ========== 奖品（仅展示） ========== */
-const PRIZES=[
-  {key:"66",label:"红包66元"},
-  {key:"388",label:"红包388元"},
-  {key:"588",label:"红包588元"},
-  {key:"888",label:"红包888元"},
-  {key:"iphone",label:"iPhone 17 Pro Max"}
-];
-const COLORS=["#ef4444","#f97316","#facc15","#22c55e","#3b82f6"];
+/* ================= 转盘旋转 ================= */
+let currentAngle = 0;
 
-/* ========== 绘制转盘（展示用） ========== */
-const canvas=document.getElementById("wheel");
-const ctx=canvas.getContext("2d");
-const R=150;
-const step=2*Math.PI/PRIZES.length;
-
-PRIZES.forEach((p,i)=>{
-  ctx.beginPath();
-  ctx.moveTo(R,R);
-  ctx.arc(R,R,R,i*step,(i+1)*step);
-  ctx.fillStyle=COLORS[i];
-  ctx.fill();
-
-  ctx.save();
-  ctx.translate(R,R);
-  ctx.rotate(i*step+step/2);
-  ctx.textAlign="right";
-  ctx.font="bold 14px Comic Sans MS";
-  ctx.fillStyle="#fff";
-  ctx.fillText(p.label,R-16,6);
-  ctx.restore();
-});
-
-/* ========== 安全读取 from ========== */
-const params = new URLSearchParams(location.search);
-let fromId = params.get("from");
-
-if(!fromId || fromId==="undefined" || fromId==="null"){
-  fromId = null;
+// 如果你只是“转一下效果”，用这个
+function spinRandom(){
+  currentAngle += 1440 + Math.random() * 360;
+  document.getElementById("wheelImg").style.transform =
+    `rotate(${currentAngle}deg)`;
 }
 
-let activityId = fromId || localStorage.getItem("activityId");
-
-/* ========== 实时监听 ========== */
-function watchActivity(id){
-  db.collection("activities").doc(id).onSnapshot(snap=>{
+/* ================= 实时监听进度 ================= */
+function watchActivity(activityId){
+  db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
     const d = snap.data();
 
-    const prize = PRIZES.find(p=>p.key===d.prizeKey);
-    if(prize) document.getElementById("prizeText").innerText = prize.label;
+    if(PRIZE_LABEL[d.prizeKey]){
+      document.getElementById("prizeText").innerText =
+        PRIZE_LABEL[d.prizeKey];
+    }
 
     const percent = Math.min(100, d.progress || 0);
     document.getElementById("progressInner").style.width = percent + "%";
     document.getElementById("progressText").innerText =
-      percent >= 100 ? "完成进度 100%" : `完成进度 ${percent.toFixed(1)}%`;
+      percent >= 100
+        ? "完成进度 100%"
+        : `完成进度 ${percent.toFixed(1)}%`;
 
     if(percent >= 100){
       document.getElementById("btnHelp").disabled = true;
@@ -223,8 +201,18 @@ function watchActivity(id){
   });
 }
 
+/* ================= 读取 from ================= */
+const params = new URLSearchParams(location.search);
+let fromId = params.get("from");
+if(!fromId || fromId==="undefined" || fromId==="null"){
+  fromId = null;
+}
+
+let activityId = fromId || localStorage.getItem("activityId");
+
 if(activityId){
   watchActivity(activityId);
+
   if(!fromId){
     localStorage.setItem("activityId", activityId);
     document.getElementById("linkBox").innerText =
@@ -232,10 +220,11 @@ if(activityId){
   }
 }
 
-/* ========== 发起助力 ========== */
+/* ================= 发起助力 ================= */
 document.getElementById("btnCreate").onclick = async ()=>{
   const btn = document.getElementById("btnCreate");
   btn.disabled = true;
+  spinRandom();
 
   try{
     const res = await fetch(CREATE_API,{
@@ -265,7 +254,7 @@ document.getElementById("btnCreate").onclick = async ()=>{
   }
 };
 
-/* ========== 帮助好友 ========== */
+/* ================= 帮助好友 ================= */
 document.getElementById("btnHelp").onclick = async ()=>{
   if(!activityId){
     alert("请通过好友分享链接进入");
@@ -274,6 +263,7 @@ document.getElementById("btnHelp").onclick = async ()=>{
 
   const btn = document.getElementById("btnHelp");
   btn.disabled = true;
+  spinRandom();
 
   try{
     const res = await fetch(HELP_API,{
@@ -293,4 +283,5 @@ document.getElementById("btnHelp").onclick = async ()=>{
 
 </body>
 </html>
+
 
