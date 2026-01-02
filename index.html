@@ -21,6 +21,27 @@ body{
   overflow:hidden;
 }
 
+/* ===== 页面金币 ===== */
+#coins-bg{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:1;
+}
+.bg-coin{
+  position:absolute;
+  top:-40px;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:radial-gradient(circle,#fde68a,#f59e0b);
+  opacity:.8;
+  animation:fall linear infinite;
+}
+@keyframes fall{
+  to{transform:translateY(110vh) rotate(360deg)}
+}
+
 /* ===== 主卡片 ===== */
 .card{
   width:92%;
@@ -76,7 +97,7 @@ canvas{
   object-fit:cover;
 }
 
-/* ===== 红包进度条 ===== */
+/* ===== 进度条 ===== */
 .progress-wrap{
   margin-top:18px;
   padding:12px;
@@ -92,52 +113,13 @@ canvas{
 }
 .progress-inner{
   position:absolute;
-  left:0;
-  top:0;
+  left:0;top:0;
   height:100%;
   width:0%;
   background:linear-gradient(90deg,#ef4444,#f97316);
   border-radius:999px;
   transition:width .4s ease;
 }
-.red-packets{
-  position:absolute;
-  left:0;
-  top:-18px;
-  width:100%;
-  pointer-events:none;
-}
-.packet{
-  position:absolute;
-  width:18px;
-  height:22px;
-  background:linear-gradient(#ef4444,#dc2626);
-  border-radius:4px;
-  box-shadow:0 2px 6px rgba(0,0,0,.25);
-}
-.packet:before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:6px;
-  background:#fde68a;
-  border-radius:4px 4px 0 0;
-}
-
-/* ===== 95% 抖动 ===== */
-.shake{
-  animation:shake .4s infinite;
-}
-@keyframes shake{
-  0%{transform:translateX(0)}
-  25%{transform:translateX(-2px)}
-  50%{transform:translateX(2px)}
-  75%{transform:translateX(-2px)}
-  100%{transform:translateX(0)}
-}
-
 .progress-text{
   margin-top:8px;
   font-size:13px;
@@ -159,14 +141,7 @@ canvas{
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
 
-.link-box{
-  margin-top:10px;
-  font-size:12px;
-  color:#374151;
-  word-break:break-all;
-}
-
-/* ===== 完成全屏庆祝 ===== */
+/* ===== 完成庆祝 ===== */
 #celebrate{
   position:fixed;
   inset:0;
@@ -176,67 +151,41 @@ canvas{
   align-items:center;
   flex-direction:column;
   z-index:999;
-  overflow:hidden;
 }
-#celebrate h2{
-  color:#fff;
-  font-size:28px;
-  margin-bottom:10px;
-}
-#celebrate p{
-  color:#fff;
-  font-size:16px;
-}
-
-/* 金币 */
-.coin{
-  position:absolute;
-  top:-40px;
-  width:28px;
-  height:28px;
-  border-radius:50%;
-  background:radial-gradient(circle,#fde68a,#f59e0b);
-  animation:fall linear infinite;
-}
-@keyframes fall{
-  to{transform:translateY(110vh)}
-}
+#celebrate h2{color:#fff;font-size:28px}
+#celebrate p{color:#fff}
 </style>
 </head>
 
 <body>
+
+<!-- 页面金币 -->
+<div id="coins-bg"></div>
 
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
   <div class="sub">完成进度越高，奖励越接近</div>
 
   <div class="prize-box">
-    奖品：<span id="prizeText">未确定</span><br>
-    快邀请好友助力吧
+    奖品：<span id="prizeText">未确定</span>
   </div>
 
   <div class="wheel-wrap">
     <canvas id="wheel" width="320" height="320"></canvas>
-    <div class="center">
-      <img src="logo.png">
-    </div>
+    <div class="center"><img src="logo.png"></div>
   </div>
 
-  <div class="progress-wrap" id="progressWrap">
+  <div class="progress-wrap">
     <div class="progress-bar">
       <div class="progress-inner" id="progressInner"></div>
-      <div class="red-packets" id="packets"></div>
     </div>
     <div class="progress-text" id="progressPercent">已完成 0%</div>
   </div>
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
   <button class="btn primary" id="btnCreate">发起助力试试</button>
-
-  <div class="link-box" id="linkBox"></div>
 </div>
 
-<!-- 全屏完成 -->
 <div id="celebrate">
   <h2>🎉 恭喜完成助力 🎉</h2>
   <p>奖励已达成，请联系客服领取</p>
@@ -251,10 +200,6 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-/* ===== 接口 ===== */
-const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
-
 /* ===== 奖品 ===== */
 const PRIZES=[
   {key:"66",label:"红包66元"},
@@ -266,111 +211,54 @@ const PRIZES=[
   {key:"iphone",label:"iPhone 17 Pro Max"}
 ];
 
-/* ===== 转盘 ===== */
+/* ===== 转盘绘制 ===== */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-const R=160,step=2*Math.PI/PRIZES.length;
-PRIZES.forEach((p,i)=>{
-  ctx.beginPath();
-  ctx.moveTo(R,R);
-  ctx.arc(R,R,R,i*step,(i+1)*step);
-  ctx.fillStyle=`hsl(${i*45},80%,80%)`;
-  ctx.fill();
-});
+const R=160;
+const step=2*Math.PI/PRIZES.length;
+
+function drawWheel(){
+  ctx.clearRect(0,0,320,320);
+  PRIZES.forEach((p,i)=>{
+    const start=i*step;
+    const end=start+step;
+    const mid=start+step/2;
+
+    ctx.beginPath();
+    ctx.moveTo(R,R);
+    ctx.arc(R,R,R,start,end);
+    ctx.fillStyle=`hsl(${i*45},80%,80%)`;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(R,R);
+    ctx.rotate(mid);
+    ctx.textAlign="right";
+    ctx.fillStyle="#374151";
+    ctx.font="bold 14px PingFang SC";
+    ctx.fillText(p.label,R-20,6);
+    ctx.restore();
+  });
+}
+drawWheel();
+
 let angle=0;
 function spinTo(i){
   angle+=1440+i*(360/PRIZES.length);
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
-/* ===== 红包节点 ===== */
-function renderPackets(percent){
-  const box=document.getElementById("packets");
-  box.innerHTML="";
-  const n=Math.floor(percent/10);
-  for(let i=1;i<=n;i++){
-    const p=document.createElement("div");
-    p.className="packet";
-    p.style.left=`calc(${i*10}% - 9px)`;
-    box.appendChild(p);
-  }
+/* ===== 页面金币 ===== */
+const bg=document.getElementById("coins-bg");
+for(let i=0;i<20;i++){
+  const c=document.createElement("div");
+  c.className="bg-coin";
+  c.style.left=Math.random()*100+"%";
+  c.style.animationDuration=5+Math.random()*6+"s";
+  c.style.animationDelay=Math.random()*5+"s";
+  bg.appendChild(c);
 }
-
-/* ===== 全屏金币 ===== */
-function showCelebrate(){
-  const c=document.getElementById("celebrate");
-  c.style.display="flex";
-  for(let i=0;i<60;i++){
-    const coin=document.createElement("div");
-    coin.className="coin";
-    coin.style.left=Math.random()*100+"%";
-    coin.style.animationDuration=2+Math.random()*3+"s";
-    c.appendChild(coin);
-  }
-}
-
-/* ===== 监听进度 ===== */
-function watchProgress(id){
-  db.collection("activities").doc(id).onSnapshot(snap=>{
-    if(!snap.exists)return;
-    const data=snap.data();
-    const count=data.helperCount||0;
-    const percent=Math.min(100,count/500*100);
-
-    document.getElementById("progressInner").style.width=percent+"%";
-    document.getElementById("progressPercent").innerText=
-      percent>=95 && percent<100
-      ? "就差一点点了，再邀请好友助力！"
-      : "已完成 "+percent.toFixed(2)+"%";
-
-    renderPackets(percent);
-
-    // 奖品同步
-    if(data.prizeKey){
-      const p=PRIZES.find(x=>x.key===data.prizeKey);
-      if(p) document.getElementById("prizeText").innerText=p.label;
-    }
-
-    // 95% 抖动
-    document.getElementById("progressWrap")
-      .classList.toggle("shake",percent>=95 && percent<100);
-
-    // 完成锁死 + 庆祝
-    if(data.finished){
-      document.getElementById("progressInner").style.width="100%";
-      document.getElementById("progressPercent").innerText="已完成 100%";
-      showCelebrate();
-    }
-  });
-}
-
-/* ===== 逻辑 ===== */
-let activityId=new URLSearchParams(location.search).get("from");
-if(activityId) watchProgress(activityId);
-
-document.getElementById("btnCreate").onclick=async()=>{
-  const r=await fetch(CREATE_API,{method:"POST"});
-  const d=await r.json();
-  activityId=d.activityId;
-  spinTo(PRIZES.findIndex(p=>p.key===d.prizeKey));
-  document.getElementById("prizeText").innerText=
-    PRIZES.find(p=>p.key===d.prizeKey).label;
-  document.getElementById("linkBox").innerText=
-    "分享链接："+location.origin+location.pathname+"?from="+activityId;
-  watchProgress(activityId);
-};
-
-document.getElementById("btnHelp").onclick=async()=>{
-  if(!activityId)return alert("请通过好友分享链接进入");
-  const r=await fetch(HELP_API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({activityId})
-  });
-  const d=await r.json();
-  if(!d.success)return alert(d.error||"你已助过力");
-  spinTo(PRIZES.findIndex(p=>p.key===d.prizeKey));
-};
 </script>
+
 </body>
 </html>
