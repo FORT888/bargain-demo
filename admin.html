@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>联信资 · 活动后台</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#f6f8fb;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+.container{
+  max-width:1100px;
+  margin:30px auto;
+  padding:0 16px;
+}
+h1{
+  font-size:24px;
+  margin-bottom:16px;
+}
+.table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+.table th,.table td{
+  padding:14px 12px;
+  font-size:14px;
+  text-align:left;
+}
+.table th{
+  background:#f1f5f9;
+  font-weight:600;
+}
+.table tr:nth-child(even){
+  background:#fafafa;
+}
+.badge{
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+}
+.green{background:#dcfce7;color:#166534;}
+.yellow{background:#fef3c7;color:#92400e;}
+.red{background:#fee2e2;color:#991b1b;}
+.small{
+  font-size:12px;
+  color:#6b7280;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>联信资 · 活动后台</h1>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>活动 ID</th>
+        <th>助力人数</th>
+        <th>进度</th>
+        <th>状态</th>
+        <th>创建时间</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+/* ===== Firebase 配置（填你自己的） ===== */
+firebase.initializeApp({
+  apiKey: "你的 apiKey",
+  authDomain: "你的 authDomain",
+  projectId: "你的 projectId",
+  storageBucket: "你的 storageBucket",
+  messagingSenderId: "你的 messagingSenderId",
+  appId: "你的 appId"
+});
+
+const db = firebase.firestore();
+const tbody = document.getElementById("tbody");
+
+/* ===== 实时读取活动 ===== */
+db.collection("activities")
+  .orderBy("helperCount","desc")
+  .onSnapshot(snapshot=>{
+    tbody.innerHTML = "";
+    snapshot.forEach(doc=>{
+      const d = doc.data();
+      const count = d.helperCount || 0;
+
+      let status = "";
+      let cls = "green";
+
+      if(count >= 450){
+        status = "即将完成";
+        cls = "red";
+      }else if(count >= 300){
+        status = "冲刺中";
+        cls = "yellow";
+      }else{
+        status = "进行中";
+        cls = "green";
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <div>${doc.id}</div>
+          <div class="small">${d.prizeKey || "-"}</div>
+        </td>
+        <td>${count}</td>
+        <td>${Math.min(100,(count/500*100)).toFixed(1)}%</td>
+        <td><span class="badge ${cls}">${status}</span></td>
+        <td class="small">${new Date(d.createdAt).toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+</script>
+</body>
+</html>
