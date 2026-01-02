@@ -25,47 +25,103 @@ body{
   padding:22px 18px 26px;
   box-shadow:0 30px 80px rgba(0,0,0,.15);
   text-align:center;
+  position:relative;
+  z-index:2;
 }
-h1{margin:6px 0;font-size:22px}
-.prize-box{font-size:16px;font-weight:700;margin-bottom:10px}
+h1{margin:6px 0 2px;font-size:22px}
+.prize-box{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:10px;
+}
 .prize-box span{color:#dc2626}
-
 .wheel-wrap{
-  width:300px;height:300px;margin:16px auto;position:relative;
+  width:300px;
+  height:300px;
+  margin:16px auto;
+  position:relative;
 }
 #wheel{
-  width:100%;height:100%;border-radius:50%;
+  width:100%;
+  height:100%;
+  border-radius:50%;
   transition:transform 3.8s cubic-bezier(.25,.9,.25,1);
+  position:relative;
+  z-index:2;
 }
 #centerLogo{
-  position:absolute;left:50%;top:50%;
-  width:110px;height:110px;
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:110px;
+  height:110px;
   transform:translate(-50%,-50%);
   pointer-events:none;
+  z-index:3;
 }
-
-.progress-bar{height:14px;background:#fde68a;border-radius:999px;overflow:hidden}
+.redpack-layer{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  z-index:1;
+  pointer-events:none;
+}
+.redpack{
+  position:absolute;
+  top:-40px;
+  width:26px;
+  height:34px;
+  background:#dc2626;
+  border-radius:4px;
+  opacity:0;
+  animation:fallFade linear forwards;
+}
+.redpack::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:6px;
+  background:#fde68a;
+  border-radius:4px 4px 0 0;
+}
+@keyframes fallFade{
+  0%{transform:translateY(0);opacity:0}
+  15%{opacity:.85}
+  85%{opacity:.85}
+  100%{transform:translateY(120vh);opacity:0}
+}
+.progress-bar{
+  height:14px;
+  background:#fde68a;
+  border-radius:999px;
+  overflow:hidden;
+}
 .progress-inner{
-  height:100%;width:0%;
+  height:100%;
+  width:0%;
   background:linear-gradient(90deg,#ef4444,#f59e0b);
   transition:width .4s ease;
 }
-.progress-text{margin-top:6px;font-size:13px;font-weight:600;color:#b91c1c}
-
+.progress-text{
+  margin-top:6px;
+  font-size:13px;
+  font-weight:600;
+  color:#b91c1c;
+}
 .btn{
-  width:100%;margin-top:10px;padding:14px;
-  border:none;border-radius:16px;
-  font-size:16px;font-weight:600;cursor:pointer;
+  width:100%;
+  margin-top:10px;
+  padding:14px;
+  border:none;
+  border-radius:16px;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
 }
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
-
-.link-box{
-  margin-top:8px;
-  font-size:12px;
-  color:#374151;
-  word-break:break-all;
-}
 </style>
 </head>
 
@@ -79,8 +135,9 @@ h1{margin:6px 0;font-size:22px}
   </div>
 
   <div class="wheel-wrap">
+    <div class="redpack-layer" id="packs"></div>
     <canvas id="wheel" width="600" height="600"></canvas>
-    <img id="centerLogo" src="logo.png">
+    <img id="centerLogo" src="logo.png" />
   </div>
 
   <div class="progress-bar">
@@ -90,46 +147,28 @@ h1{margin:6px 0;font-size:22px}
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
   <button class="btn primary" id="btnCreate">发起助力试试</button>
-
-  <div class="link-box" id="linkBox"></div>
 </div>
 
 <script>
-/* ================= 后端接口 ================= */
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+/* ========= 仅因域名修改新增 ========= */
 const ORIGIN = window.location.origin;
 
-/* ================= 设备ID ================= */
-let deviceId = localStorage.getItem("device_id");
-if(!deviceId){
-  deviceId = crypto.randomUUID();
-  localStorage.setItem("device_id",deviceId);
-}
-
-/* ================= 转盘配置 ================= */
+/* ================= 转盘绘制 ================= */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
 
 const PRIZES = [
-  {key:"66",label:"66元"},
-  {key:"88",label:"88元"},
-  {key:"388",label:"388元"},
-  {key:"588",label:"588元"},
-  {key:"888",label:"888元"},
-  {key:"1888",label:"1888元"},
-  {key:"iphone",label:"iPhone"},
-  {key:"myst",label:"神秘奖"}
+  "66元","88元","388元","588元",
+  "888元","1888元","iPhone","神秘奖"
 ];
+const COLORS = [
+  "#ef4444","#f97316","#f59e0b","#facc15",
+  "#fb7185","#f43f5e","#eab308","#f87171"
+];
+const STEP = Math.PI * 2 / PRIZES.length;
 
-const COLORS = ["#ef4444","#f97316","#f59e0b","#facc15",
-                "#fb7185","#f43f5e","#eab308","#f87171"];
-
-const STEP = Math.PI*2/PRIZES.length;
-
-/* 画盘 */
-PRIZES.forEach((p,i)=>{
+PRIZES.forEach((text,i)=>{
   ctx.beginPath();
   ctx.moveTo(R,R);
   ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
@@ -142,69 +181,50 @@ PRIZES.forEach((p,i)=>{
   ctx.textAlign="right";
   ctx.font="bold 24px PingFang SC";
   ctx.fillStyle="#7c2d12";
-  ctx.fillText(p.label,R-30,10);
+  ctx.fillText(text,R-30,10);
   ctx.restore();
 });
 
+/* ================= 转盘旋转 ================= */
 let angle=0;
-function spinTo(i){
-  angle+=1440+i*(360/PRIZES.length);
+function spin(){
+  angle+=1440+Math.random()*360;
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
-/* ================= 进度 ================= */
-function setProgress(p){
+/* ================= 红包雨 ================= */
+const box=document.getElementById("packs");
+function spawnPack(){
+  const p=document.createElement("div");
+  p.className="redpack";
+  p.style.left=Math.random()*100+"%";
+  p.style.animationDuration=7+Math.random()*3+"s";
+  box.appendChild(p);
+  setTimeout(()=>p.remove(),12000);
+}
+setInterval(spawnPack,800);
+
+/* ================= 示例交互（仅补链接） ================= */
+document.getElementById("btnCreate").onclick=()=>{
+  spin();
+  fakeProgress();
+
+  const link = `${ORIGIN}/?from=demo`;
+  alert("分享链接：\n"+link);
+};
+document.getElementById("btnHelp").onclick=()=>{
+  spin();
+  fakeProgress();
+};
+
+let p=0;
+function fakeProgress(){
+  p=Math.min(100,p+Math.random()*5);
   document.getElementById("progressInner").style.width=p+"%";
   document.getElementById("progressText").innerText=
     "完成进度 "+p.toFixed(1)+"%";
 }
-
-/* ================= 发起 ================= */
-document.getElementById("btnCreate").onclick=async()=>{
-  const r=await fetch(CREATE_API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "X-Device-Id":deviceId
-    }
-  });
-  const d=await r.json();
-
-  const idx=PRIZES.findIndex(x=>x.key===d.prizeKey);
-  if(idx>=0){
-    spinTo(idx);
-    document.getElementById("prizeText").innerText=PRIZES[idx].label;
-  }
-
-  const link=`${ORIGIN}/?from=${d.activityId}`;
-  document.getElementById("linkBox").innerText="分享链接："+link;
-  setProgress(d.percent||0);
-};
-
-/* ================= 助力 ================= */
-document.getElementById("btnHelp").onclick=async()=>{
-  const from=new URLSearchParams(location.search).get("from");
-  if(!from){alert("请通过好友分享链接进入");return;}
-
-  const r=await fetch(HELP_API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "X-Device-Id":deviceId
-    },
-    body:JSON.stringify({activityId:from})
-  });
-  const d=await r.json();
-  if(!d.success){alert(d.error||"已助力");return;}
-
-  const idx=PRIZES.findIndex(x=>x.key===d.prizeKey);
-  if(idx>=0)spinTo(idx);
-  setProgress(d.percent);
-};
 </script>
 
 </body>
 </html>
-
-
-
