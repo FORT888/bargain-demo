@@ -29,8 +29,6 @@ body{
   padding:22px 18px 26px;
   box-shadow:0 30px 80px rgba(0,0,0,.15);
   text-align:center;
-  position:relative;
-  z-index:2;
 }
 h1{margin:6px 0;font-size:22px}
 .prize-box{
@@ -101,45 +99,6 @@ button:disabled{opacity:.6}
   color:#374151;
   word-break:break-all;
 }
-
-/* ===== 完成全屏 ===== */
-#finish{
-  position:fixed;
-  inset:0;
-  background:radial-gradient(circle,#fde68a,#fb7185);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  z-index:999;
-  color:#fff;
-}
-#finish h2{font-size:28px;margin-bottom:10px}
-#finish p{font-size:16px}
-
-/* 红包雨 */
-.redpack{
-  position:absolute;
-  top:-40px;
-  width:26px;
-  height:34px;
-  background:#dc2626;
-  border-radius:4px;
-  animation:fall 6s linear forwards;
-}
-.redpack::before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:6px;
-  background:#fde68a;
-  border-radius:4px 4px 0 0;
-}
-@keyframes fall{
-  to{transform:translateY(120vh);opacity:0}
-}
 </style>
 </head>
 
@@ -147,6 +106,7 @@ button:disabled{opacity:.6}
 
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
+
   <div class="prize-box">
     奖品：<span id="prizeText">未确定</span>
   </div>
@@ -167,45 +127,35 @@ button:disabled{opacity:.6}
   <div class="link-box" id="linkBox"></div>
 </div>
 
-<div id="finish">
-  <h2>🎉 恭喜完成助力 🎉</h2>
-  <p>奖励已达成，请联系客服领取</p>
-</div>
-
 <script>
-/* ========= UUID 兼容生成（唯一修复点） ========= */
-function genUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+/* ========== UUID（兼容所有浏览器） ========== */
+function genUUID(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){
+    const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
     return v.toString(16);
   });
 }
 
-/* ========= Firebase ========= */
+/* ========== Firebase ========== */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
-  projectId: "cut-demo-e11b9",
-  storageBucket: "cut-demo-e11b9.firebasestorage.app",
-  messagingSenderId: "1065166593402",
-  appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
+  projectId: "cut-demo-e11b9"
 });
 const db = firebase.firestore();
 
-/* ========= 接口 ========= */
+/* ========== 接口 ========== */
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app/createActivity";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app/helpActivity";
-const ORIGIN = location.origin;
 
-/* ========= 设备 token ========= */
+/* ========== 设备 token ========== */
 let deviceToken = localStorage.getItem("deviceToken");
-if (!deviceToken) {
-  deviceToken = genUUID();   // ← 关键修复
-  localStorage.setItem("deviceToken", deviceToken);
+if(!deviceToken){
+  deviceToken = genUUID();
+  localStorage.setItem("deviceToken",deviceToken);
 }
 
-/* ========= 转盘绘制 ========= */
+/* ========== 转盘绘制 ========== */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -221,11 +171,12 @@ const PRIZES = [
 ];
 
 const STEP = 2*Math.PI / PRIZES.length;
+
 PRIZES.forEach((p,i)=>{
   ctx.beginPath();
   ctx.moveTo(R,R);
   ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
-  ctx.fillStyle = `hsl(${i*40},80%,70%)`;
+  ctx.fillStyle=`hsl(${i*40},80%,70%)`;
   ctx.fill();
 
   ctx.save();
@@ -238,13 +189,13 @@ PRIZES.forEach((p,i)=>{
   ctx.restore();
 });
 
-let angle = 0;
-function spinTo(i){
-  angle += 1440 + i*(360/PRIZES.length);
+let angle=0;
+function spinTo(index){
+  angle += 1440 + index*(360/PRIZES.length);
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ========= 实时监听 ========= */
+/* ========== 实时监听 ========== */
 function watchActivity(id){
   db.collection("activities").doc(id).onSnapshot(snap=>{
     if(!snap.exists) return;
@@ -256,60 +207,59 @@ function watchActivity(id){
 
     const p = PRIZES.find(x=>x.key===d.prizeKey);
     if(p) document.getElementById("prizeText").innerText = p.label;
-
-    if(d.finished){
-      finish();
-    }
   });
 }
 
-/* ========= 完成效果 ========= */
-function finish(){
-  document.getElementById("finish").style.display="flex";
-  document.getElementById("btnHelp").disabled = true;
-  document.getElementById("btnCreate").disabled = true;
-
-  for(let i=0;i<80;i++){
-    const p = document.createElement("div");
-    p.className="redpack";
-    p.style.left=Math.random()*100+"%";
-    document.body.appendChild(p);
-    setTimeout(()=>p.remove(),7000);
-  }
-}
-
-/* ========= 发起 ========= */
+/* ========== 发起助力（关键修好版） ========== */
 document.getElementById("btnCreate").onclick = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
+    headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ deviceToken })
   });
+
   const d = await r.json();
 
+  // 🔴 必须判断 success
+  if(!d.success){
+    alert(d.error || "创建失败");
+    return;
+  }
+
+  if(!d.prizeKey){
+    alert("未获取到奖品");
+    return;
+  }
+
   const idx = PRIZES.findIndex(p=>p.key===d.prizeKey);
-  if(idx>=0) spinTo(idx);
+  if(idx < 0){
+    alert("奖品配置错误");
+    return;
+  }
+
+  spinTo(idx);
+  document.getElementById("prizeText").innerText = PRIZES[idx].label;
 
   document.getElementById("linkBox").innerText =
-    "分享链接："+`${ORIGIN}/?from=${d.activityId}`;
+    location.origin + "/?from=" + d.activityId;
 
   watchActivity(d.activityId);
 };
 
-/* ========= 助力 ========= */
+/* ========== 帮助好友助力 ========== */
 document.getElementById("btnHelp").onclick = async ()=>{
   const id = new URLSearchParams(location.search).get("from");
-  if(!id){ alert("请通过好友分享链接进入"); return; }
+  if(!id){
+    alert("请通过好友分享链接进入");
+    return;
+  }
 
   const r = await fetch(HELP_API,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
+    headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ activityId:id, deviceToken })
   });
+
   const d = await r.json();
   if(!d.success){
     alert(d.error || "你已经助过力了");
@@ -317,7 +267,7 @@ document.getElementById("btnHelp").onclick = async ()=>{
   }
 };
 
-/* ========= 助力页自动监听 ========= */
+/* ========== 助力页自动监听 ========== */
 const from = new URLSearchParams(location.search).get("from");
 if(from){
   watchActivity(from);
@@ -326,6 +276,7 @@ if(from){
 
 </body>
 </html>
+
 
 
 
