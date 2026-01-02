@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -13,7 +13,7 @@
 body{
   margin:0;
   height:100vh;
-  background:#f7f8fb;
+  background:#f6f8fb;
   display:flex;
   justify-content:center;
   align-items:center;
@@ -24,55 +24,54 @@ body{
   max-width:420px;
   background:#fff;
   border-radius:28px;
-  padding:22px 18px 28px;
+  padding:22px 16px 26px;
   box-shadow:0 24px 60px rgba(0,0,0,.12);
   text-align:center;
 }
 h1{font-size:22px;margin:6px 0}
-.sub{font-size:13px;color:#6b7280;margin-bottom:12px}
+.sub{font-size:13px;color:#6b7280;margin-bottom:10px}
 
-/* ===== 转盘区域 ===== */
+/* ===== 转盘 ===== */
 .wheel-wrap{
   position:relative;
   width:320px;
   height:320px;
-  margin:0 auto 12px;
+  margin:0 auto 10px;
 }
 .wheel{
   width:100%;
   height:100%;
   border-radius:50%;
-  background:
-    conic-gradient(
-      #22c55e 0% 50%,
-      #facc15 50% 95%,
-      #ef4444 95% 100%
-    );
-  transition:transform 2.6s cubic-bezier(.2,.9,.3,1);
+  background:conic-gradient(
+    #22c55e 0% 50%,
+    #facc15 50% 90%,
+    #ef4444 90% 100%
+  );
+  transition:transform 2.8s cubic-bezier(.2,.9,.3,1);
 }
 
-/* ===== 外圈百分比信息块 ===== */
+/* ===== 百分比信息块 ===== */
 .info-ring{
   position:absolute;
-  inset:-14px;
+  inset:-18px;
   pointer-events:none;
 }
 .info{
   position:absolute;
-  width:58px;
-  height:28px;
-  background:rgba(255,255,255,.92);
-  border-radius:14px;
+  width:64px;
+  height:30px;
+  background:#fff;
+  border-radius:16px;
   font-size:12px;
   font-weight:700;
   color:#2563eb;
   display:flex;
   align-items:center;
   justify-content:center;
-  box-shadow:0 4px 10px rgba(0,0,0,.15);
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 
-/* ===== 中心 LOGO（可点击）===== */
+/* ===== 中心 LOGO ===== */
 .center{
   position:absolute;
   inset:0;
@@ -85,34 +84,30 @@ h1{font-size:22px;margin:6px 0}
   width:150px;
   height:150px;
   border-radius:50%;
-  background:
-    radial-gradient(circle at top left,#ffffff,#e5e7eb);
+  background:radial-gradient(circle,#fff 30%,#e5e7eb 100%);
   box-shadow:
     inset 0 6px 14px rgba(255,255,255,.9),
-    inset 0 -8px 16px rgba(0,0,0,.1),
-    0 16px 30px rgba(0,0,0,.25);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+    inset 0 -10px 20px rgba(0,0,0,.12),
+    0 18px 30px rgba(0,0,0,.25);
   cursor:pointer;
 }
 .center-btn img{
   width:100%;
   height:100%;
   object-fit:contain;
-  padding:18px;
+  padding:12px;
 }
 
-/* ===== 指针（从中心向上）===== */
+/* ===== 指针（中心向上，略短）===== */
 .pointer{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-100%);
   width:0;height:0;
-  border-left:10px solid transparent;
-  border-right:10px solid transparent;
-  border-bottom:34px solid #111;
+  border-left:9px solid transparent;
+  border-right:9px solid transparent;
+  border-bottom:30px solid #111;
   z-index:4;
 }
 
@@ -123,10 +118,20 @@ h1{font-size:22px;margin:6px 0}
   color:#2563eb;
   margin-top:6px;
 }
-.hint{
-  font-size:13px;
-  color:#6b7280;
-  margin-top:10px;
+.hint{font-size:13px;color:#6b7280;margin-top:8px}
+
+/* ===== 按钮 ===== */
+.btn{
+  width:100%;
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  font-size:16px;
+  font-weight:600;
+  margin-top:12px;
+  background:#2563eb;
+  color:#fff;
+  cursor:pointer;
 }
 
 /* ===== 抖动 ===== */
@@ -148,14 +153,8 @@ h1{font-size:22px;margin:6px 0}
 
   <div class="wheel-wrap">
     <div class="wheel" id="wheel"></div>
-
-    <!-- 外圈百分比框 -->
     <div class="info-ring" id="infoRing"></div>
-
-    <!-- 指针 -->
     <div class="pointer"></div>
-
-    <!-- 中心 LOGO 按钮 -->
     <div class="center">
       <div class="center-btn" id="centerBtn">
         <img src="logo.png">
@@ -165,6 +164,8 @@ h1{font-size:22px;margin:6px 0}
 
   <div class="percent" id="percentText">当前进度：0%</div>
   <div class="hint" id="hintText">点击中间按钮帮好友助力</div>
+
+  <button class="btn" id="btnCreate">发起助力试试</button>
 </div>
 
 <script>
@@ -180,8 +181,8 @@ firebase.initializeApp({
 const db=firebase.firestore();
 
 /* ===== 接口 ===== */
-const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
-const GET_UID_API="https://getuid-23p22ouguq-uc.a.run.app";
+const HELP_API="你的 helpActivity 地址";
+const GET_UID_API="你的 getUid 地址";
 
 /* ===== UID ===== */
 let uid=null;
@@ -198,36 +199,32 @@ initUid();
 /* ===== 活动 ===== */
 const params=new URLSearchParams(location.search);
 const activityId=params.get("from");
+let angle=0,currentProgress=0;
 
-let angle=0;
-let currentProgress=0;
-
-/* ===== 外圈信息框生成 ===== */
-function buildInfoRing(){
+/* ===== 百分比框（含完成项）===== */
+const percentLabels=[0,8,16,24,32,40,48,56,64,72,80,"完成"];
+function buildRing(){
   const ring=document.getElementById("infoRing");
   ring.innerHTML="";
-  const count=12;
-  for(let i=0;i<count;i++){
+  const r=165;
+  percentLabels.forEach((p,i)=>{
     const d=document.createElement("div");
     d.className="info";
-    d.innerText=(i*8)+"%";
-    const a=(360/count)*i;
-    const r=160;
-    d.style.left=160+Math.cos(a*Math.PI/180)*r-29+"px";
-    d.style.top =160+Math.sin(a*Math.PI/180)*r-14+"px";
+    d.innerText=typeof p==="number"?p+"%":"100%";
+    const a=(360/percentLabels.length)*i;
+    d.style.left=160+Math.cos(a*Math.PI/180)*r-32+"px";
+    d.style.top =160+Math.sin(a*Math.PI/180)*r-15+"px";
     ring.appendChild(d);
-  }
+  });
 }
-buildInfoRing();
+buildRing();
 
 /* ===== 转盘 ===== */
 function rotateTo(p){
   angle+=720+Math.random()*360;
   document.getElementById("wheel").style.transform=
     `rotate(${angle+p*3.6}deg)`;
-
-  document.getElementById("percentText").innerText=
-    "当前进度："+p.toFixed(2)+"%";
+  document.getElementById("percentText").innerText="当前进度："+p.toFixed(2)+"%";
 
   if(p>=95&&p<100){
     document.getElementById("wheel").classList.add("shake");
@@ -239,6 +236,7 @@ function rotateTo(p){
 
 /* ===== 读取进度 ===== */
 async function loadActivity(){
+  if(!activityId)return;
   const s=await db.collection("activities").doc(activityId).get();
   if(!s.exists)return;
   currentProgress=s.data().progress||0;
@@ -246,11 +244,10 @@ async function loadActivity(){
 }
 if(activityId) loadActivity();
 
-/* ===== 点击中心 LOGO 助力 ===== */
+/* ===== 中心点击助力 ===== */
 document.getElementById("centerBtn").onclick=async()=>{
   if(!activityId||!uid)return;
   rotateTo(currentProgress+Math.random()*2);
-
   const r=await fetch(HELP_API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -263,9 +260,20 @@ document.getElementById("centerBtn").onclick=async()=>{
     alert(d.error||"你已助过力了");
   }
 };
+
+/* ===== 发起 ===== */
+document.getElementById("btnCreate").onclick=async()=>{
+  if(!uid)return;
+  const ref=await db.collection("activities").add({
+    owner:uid,helperCount:0,progress:0,finished:false,createdAt:Date.now()
+  });
+  const link=location.origin+location.pathname+"?from="+ref.id;
+  document.getElementById("hintText").innerText="分享链接："+link;
+};
 </script>
 </body>
 </html>
+
 
 
 
