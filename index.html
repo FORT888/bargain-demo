@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>联信资 · 助力转盘</title>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
 *{box-sizing:border-box}
 body{
@@ -18,13 +21,11 @@ body{
   overflow:hidden;
 }
 
-/* ===================================================
-   第二层：金币 + 渐变玻璃层（不拦截点击）
-=================================================== */
+/* ================= 第二层：金币（不拦截点击） ================= */
 #coins-mid,
 #coins-mid *,
 #coins-mid::after{
-  pointer-events:none;   /* ⭐ 核心修复 */
+  pointer-events:none;
 }
 
 #coins-mid{
@@ -32,7 +33,6 @@ body{
   inset:0;
   z-index:2;
 
-  /* 玻璃渐变，透底 */
   background:linear-gradient(
     to bottom,
     rgba(255,255,255,0.14) 0%,
@@ -41,7 +41,6 @@ body{
     rgba(255,255,255,0) 85%
   );
 
-  /* 金币向下消失 */
   mask-image: linear-gradient(
     to bottom,
     rgba(0,0,0,1) 0%,
@@ -58,7 +57,6 @@ body{
   );
 }
 
-/* 金币 */
 .mid-coin{
   position:absolute;
   top:-40px;
@@ -69,7 +67,6 @@ body{
   opacity:.9;
   animation:fall-mid linear infinite;
 }
-
 @keyframes fall-mid{
   to{transform:translateY(110vh) rotate(360deg)}
 }
@@ -89,9 +86,7 @@ body{
     );
 }
 
-/* ===================================================
-   第三层：主卡片
-=================================================== */
+/* ================= 主卡片 ================= */
 .card{
   width:92%;
   max-width:420px;
@@ -104,11 +99,9 @@ body{
   z-index:3;
 }
 
-/* 标题 */
 h1{margin:6px 0;font-size:22px}
 .sub{font-size:13px;color:#6b7280;margin-bottom:8px}
 
-/* 奖品 */
 .prize-box{
   margin:10px 0;
   font-size:15px;
@@ -166,7 +159,6 @@ canvas{
 <!-- 第二层金币 -->
 <div id="coins-mid"></div>
 
-<!-- 主卡片 -->
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
   <div class="sub">完成进度越高，奖励越接近</div>
@@ -185,25 +177,37 @@ canvas{
 </div>
 
 <script>
-/* ================= 转盘数据 ================= */
+/* ================= Firebase ================= */
+firebase.initializeApp({
+  apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
+  authDomain:"cut-demo-e11b9.firebaseapp.com",
+  projectId:"cut-demo-e11b9"
+});
+const db=firebase.firestore();
+
+/* ================= 接口 ================= */
+const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
+
+/* ================= 奖品 ================= */
 const PRIZES=[
-  "红包66元",
-  "红包88元",
-  "红包168元",
-  "红包388元",
-  "红包588元",
-  "红包888元",
-  "iPhone 17 Pro Max"
+  {key:"66",label:"红包66元"},
+  {key:"88",label:"红包88元"},
+  {key:"168",label:"红包168元"},
+  {key:"388",label:"红包388元"},
+  {key:"588",label:"红包588元"},
+  {key:"888",label:"红包888元"},
+  {key:"iphone",label:"iPhone 17 Pro Max"}
 ];
 
-/* ================= 绘制转盘 ================= */
+/* ================= 转盘绘制 ================= */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=160;
 const step=2*Math.PI/PRIZES.length;
 
 function drawWheel(){
-  PRIZES.forEach((text,i)=>{
+  PRIZES.forEach((p,i)=>{
     const start=i*step;
     const end=start+step;
     const mid=start+step/2;
@@ -220,13 +224,19 @@ function drawWheel(){
     ctx.textAlign="right";
     ctx.font="bold 14px PingFang SC, Microsoft YaHei";
     ctx.fillStyle="#374151";
-    ctx.fillText(text,R-20,6);
+    ctx.fillText(p.label,R-20,6);
     ctx.restore();
   });
 }
 drawWheel();
 
-/* ================= 生成金币 ================= */
+let angle=0;
+function spinTo(index){
+  angle+=1440+index*(360/PRIZES.length);
+  canvas.style.transform=`rotate(${angle}deg)`;
+}
+
+/* ================= 金币生成 ================= */
 const mid=document.getElementById("coins-mid");
 for(let i=0;i<18;i++){
   const c=document.createElement("div");
@@ -237,16 +247,41 @@ for(let i=0;i<18;i++){
   mid.appendChild(c);
 }
 
-/* ================= 测试按钮是否可点 ================= */
-document.getElementById("btnCreate").onclick=()=>{
-  alert("发起助力按钮可点击 ✅");
+/* ================= 业务逻辑（真正的） ================= */
+let activityId=new URLSearchParams(location.search).get("from");
+
+document.getElementById("btnCreate").onclick=async()=>{
+  const r=await fetch(CREATE_API,{method:"POST"});
+  const d=await r.json();
+
+  activityId=d.activityId;
+
+  const index=PRIZES.findIndex(p=>p.key===d.prizeKey);
+  spinTo(index);
+
+  document.getElementById("prizeText").innerText=
+    PRIZES[index].label;
 };
-document.getElementById("btnHelp").onclick=()=>{
-  alert("帮助好友助力按钮可点击 ✅");
+
+document.getElementById("btnHelp").onclick=async()=>{
+  if(!activityId) return alert("请通过好友分享链接进入");
+
+  const r=await fetch(HELP_API,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({activityId})
+  });
+  const d=await r.json();
+
+  if(!d.success) return alert(d.error||"你已助过力");
+
+  const index=PRIZES.findIndex(p=>p.key===d.prizeKey);
+  spinTo(index);
 };
 </script>
 
 </body>
 </html>
+
 
 
