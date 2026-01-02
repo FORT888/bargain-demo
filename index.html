@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
 <title>联信资 · 助力活动</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -13,123 +14,124 @@
 body{
   margin:0;
   height:100vh;
-  background:linear-gradient(180deg,#fff,#f6f8fb);
+  background:#f7f8fb;
   display:flex;
   justify-content:center;
   align-items:center;
-  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
 }
 .card{
-  width:94%;
+  width:92%;
   max-width:420px;
   background:#fff;
   border-radius:28px;
-  padding:26px 22px 30px;
-  box-shadow:0 30px 60px rgba(0,0,0,.12);
-  text-align:center
+  padding:28px 24px 36px;
+  box-shadow:0 24px 60px rgba(0,0,0,.12);
+  text-align:center;
 }
-h1{font-size:20px;margin:6px 0 4px}
-.sub{font-size:13px;color:#6b7280;margin-bottom:14px}
 
-/* ===== 转盘 ===== */
-.wheel-box{
+/* ===== 标题 ===== */
+h1{font-size:22px;margin:6px 0}
+.sub{font-size:13px;color:#6b7280;margin-bottom:16px}
+
+/* ===== 转盘区域 ===== */
+.wheel-wrap{
   position:relative;
-  width:280px;
-  height:280px;
-  margin:0 auto 16px
+  width:300px;
+  height:300px;
+  margin:0 auto 16px;
 }
 .wheel{
   width:100%;
   height:100%;
   border-radius:50%;
-  background:conic-gradient(
-    #22c55e 0% 50%,
-    #facc15 50% 95%,
-    #ef4444 95% 100%
-  );
-  box-shadow:inset 0 0 0 10px #fff;
-  transition:transform 2.8s cubic-bezier(.25,.8,.25,1)
-}
-
-/* ===== 中心奖池（重点） ===== */
-.center{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:148px;
-  height:148px;
-  border-radius:50%;
   background:
-    radial-gradient(circle at top left,
-      #ffffff 0%,
-      #f9fafb 55%,
-      #e5e7eb 100%);
-  box-shadow:
-    inset 0 3px 8px rgba(255,255,255,.9),
-    inset 0 -8px 16px rgba(0,0,0,.08),
-    0 18px 36px rgba(0,0,0,.25);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+    conic-gradient(
+      #22c55e 0% 48%,
+      #facc15 48% 95%,
+      #ef4444 95% 100%
+    );
+  transition:transform 2.6s cubic-bezier(.2,.9,.3,1);
 }
 
-/* LOGO 填充 */
-.center img{
-  width:82%;
-  height:82%;
-  object-fit:contain;
-  filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))
-}
-
-/* ===== 娱乐指针（能量箭头） ===== */
+/* ===== 指针（独特） ===== */
 .pointer{
   position:absolute;
   top:-18px;
   left:50%;
   transform:translateX(-50%);
-  width:44px;
-  height:44px;
-  background:linear-gradient(135deg,#111827,#374151);
-  clip-path:polygon(50% 0%, 100% 100%, 50% 78%, 0% 100%);
-  box-shadow:0 6px 14px rgba(0,0,0,.35);
+  width:0;height:0;
+  border-left:16px solid transparent;
+  border-right:16px solid transparent;
+  border-bottom:32px solid #111;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.3));
+  z-index:5;
 }
 
-/* 抖动 */
-@keyframes shake{
-  0%{transform:rotate(0deg)}
-  25%{transform:rotate(1.5deg)}
-  50%{transform:rotate(-1.5deg)}
-  75%{transform:rotate(1deg)}
-  100%{transform:rotate(0deg)}
+/* ===== 中心 LOGO ===== */
+.center{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  pointer-events:none;
+}
+.center::before{
+  content:"";
+  width:140px;
+  height:140px;
+  background:#fff;
+  border-radius:50%;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+.center img{
+  position:absolute;
+  width:110px;
+  height:110px;
+  object-fit:contain;
 }
 
-.percent{
+/* ===== 百分比框 ===== */
+.percent-box{
+  margin:10px auto 14px;
+  width:80%;
+  background:#eef2ff;
+  border-radius:14px;
+  padding:10px;
   font-size:18px;
   font-weight:700;
   color:#2563eb;
-  margin-bottom:12px
 }
 
+/* ===== 按钮 ===== */
 .btn{
   width:100%;
   border:none;
-  border-radius:18px;
-  padding:15px;
+  border-radius:16px;
+  padding:14px;
   font-size:16px;
   font-weight:600;
-  margin-top:10px;
-  cursor:pointer
+  cursor:pointer;
+  margin-top:12px;
 }
 .primary{background:#2563eb;color:#fff}
-.secondary{background:#eef2ff;color:#2563eb}
+.secondary{background:#f1f5ff;color:#2563eb}
 
-.hint{
-  margin-top:12px;
-  font-size:12px;
-  color:#6b7280;
-  line-height:1.5
+/* ===== 95% 抖动 ===== */
+.shake{
+  animation:shake .4s infinite;
 }
+@keyframes shake{
+  0%{transform:rotate(0)}
+  25%{transform:rotate(1deg)}
+  50%{transform:rotate(-1deg)}
+  75%{transform:rotate(1deg)}
+  100%{transform:rotate(0)}
+}
+
+.hint{margin-top:10px;font-size:13px;color:#6b7280}
+.footer{margin-top:22px;font-size:11px;color:#9ca3af}
 </style>
 </head>
 
@@ -138,28 +140,25 @@ h1{font-size:20px;margin:6px 0 4px}
   <h1>联信资 · 助力活动</h1>
   <div class="sub">邀请好友助力，推动进度完成奖励</div>
 
-  <div class="wheel-box">
+  <div class="wheel-wrap">
     <div class="pointer"></div>
     <div class="wheel" id="wheel"></div>
-
-    <!-- 奖池核心 -->
     <div class="center">
-      <img src="logo.png">
+      <img src="logo.png" alt="logo">
     </div>
   </div>
 
-  <div class="percent" id="percent">当前进度：0%</div>
+  <div class="percent-box" id="percentText">当前进度：0%</div>
 
-  <button class="btn secondary" id="helpBtn">帮好友助力</button>
-  <button class="btn primary" id="createBtn">发起助力</button>
+  <button class="btn secondary" id="btnHelp">帮好友助力</button>
+  <button class="btn primary" id="btnCreate">发起助力</button>
 
-  <div class="hint" id="hint">
-    每位好友仅可助力一次<br>
-    转盘仅展示进度变化
-  </div>
+  <div class="hint" id="hintText">每一次助力都会推动转盘</div>
+  <div class="footer">Trust Union Limited ©</div>
 </div>
 
 <script>
+/* ===== Firebase 配置 ===== */
 firebase.initializeApp({
       apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
       authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -170,67 +169,94 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-const GET_UID_API="https://getuid-23p22ouguq-uc.a.run.app";
+/* ===== 后端接口 ===== */
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
+const GET_UID_API="https://getuid-23p22ouguq-uc.a.run.app";
 
+/* ===== UID ===== */
 let uid=null;
-let angle=0;
-
-async function getUid(){
+async function initUid(){
   let u=localStorage.getItem("uid");
-  if(u)return u;
-  let r=await fetch(GET_UID_API);
-  let d=await r.json();
-  localStorage.setItem("uid",d.uid);
-  return d.uid
+  if(u){uid=u;return}
+  const r=await fetch(GET_UID_API);
+  const d=await r.json();
+  uid=d.uid;
+  localStorage.setItem("uid",uid);
 }
-getUid().then(u=>uid=u);
+initUid();
 
+/* ===== 活动 ===== */
 const params=new URLSearchParams(location.search);
 const activityId=params.get("from");
+let currentProgress=0;
+let angle=0;
 
-function rotate(p,first){
-  angle=(first?1080:720)+p*3.6;
-  wheel.style.transform=`rotate(${angle}deg)`;
-  percent.innerText=`当前进度：${p.toFixed(2)}%`;
+/* ===== 转盘动画 ===== */
+function rotateTo(p){
+  const target=p*3.6;
+  angle+=720+Math.random()*360;
+  document.getElementById("wheel").style.transform=
+    `rotate(${angle+target}deg)`;
+  document.getElementById("percentText").innerText=
+    `当前进度：${p.toFixed(2)}%`;
 
-  if(p>=95 && p<100){
-    wheel.style.animation="shake .6s ease-in-out";
-    setTimeout(()=>wheel.style.animation="",600);
-    hint.innerText="怎么还差一点点？再拉几位好友试试！";
+  if(p>=95&&p<100){
+    document.getElementById("wheel").classList.add("shake");
+    document.getElementById("hintText").innerText="怎么还差一点点 🤯";
+  }else{
+    document.getElementById("wheel").classList.remove("shake");
+    document.getElementById("hintText").innerText="每一次助力都会推动转盘";
   }
 }
 
-async function load(id,first){
-  let s=await db.collection("activities").doc(id).get();
-  if(!s.exists)return;
-  rotate(s.data().progress||0,first)
+/* ===== 读取进度 ===== */
+async function loadActivity(id){
+  const snap=await db.collection("activities").doc(id).get();
+  if(!snap.exists)return;
+  currentProgress=snap.data().progress||0;
+  rotateTo(currentProgress);
 }
 
-createBtn.onclick=async()=>{
+/* ===== 发起 ===== */
+document.getElementById("btnCreate").onclick=async()=>{
   if(!uid)return alert("初始化中");
-  let r=await db.collection("activities").add({
-    owner:uid,helperCount:0,progress:0,finished:false,createdAt:Date.now()
+  const ref=await db.collection("activities").add({
+    owner:uid,
+    helperCount:0,
+    progress:0,
+    finished:false,
+    createdAt:Date.now()
   });
-  hint.innerText="分享链接给好友助力：\n"+location.origin+location.pathname+"?from="+r.id;
-  load(r.id,true)
+  const link=location.origin+location.pathname+"?from="+ref.id;
+  document.getElementById("hintText").innerText="分享链接："+link;
+  loadActivity(ref.id);
 };
 
-helpBtn.onclick=async()=>{
-  if(!activityId)return alert("请通过好友分享链接进入");
-  let r=await fetch(HELP_API,{
+/* ===== 助力 ===== */
+document.getElementById("btnHelp").onclick=async()=>{
+  if(!activityId)return alert("请通过好友链接进入");
+  if(!uid)return;
+
+  rotateTo(currentProgress+Math.random()*2); // 立刻转
+
+  const r=await fetch(HELP_API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({activityId,uid})
   });
-  let d=await r.json();
-  d.success?load(activityId):alert(d.error||"你已助过力了")
+  const d=await r.json();
+  if(d.success){
+    setTimeout(()=>loadActivity(activityId),600);
+  }else{
+    alert(d.error||"你已助过力了");
+  }
 };
 
-if(activityId)load(activityId,true);
+if(activityId) loadActivity(activityId);
 </script>
 </body>
 </html>
+
 
 
 
