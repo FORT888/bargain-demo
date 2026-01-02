@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <style>
 body{
   margin:0;
@@ -17,6 +14,7 @@ body{
   justify-content:center;
   align-items:center;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  overflow:hidden;
 }
 .card{
   width:92%;
@@ -26,6 +24,7 @@ body{
   padding:20px 16px 26px;
   box-shadow:0 24px 60px rgba(0,0,0,.12);
   text-align:center;
+  z-index:1;
 }
 h1{font-size:22px;margin:6px 0}
 .sub{font-size:13px;color:#6b7280}
@@ -35,9 +34,7 @@ h1{font-size:22px;margin:6px 0}
   font-size:15px;
   font-weight:600;
 }
-.prize-box span{
-  color:#e11d48;
-}
+.prize-box span{color:#e11d48}
 
 /* 转盘 */
 .wheel-wrap{
@@ -46,41 +43,42 @@ h1{font-size:22px;margin:6px 0}
   height:320px;
   margin:14px auto;
 }
-#wheel{
+canvas{
   width:100%;
   height:100%;
   border-radius:50%;
   transition:transform 3s cubic-bezier(.25,.9,.3,1);
 }
 
-/* 指针 */
-.pointer{
-  position:absolute;
-  top:-6px;
-  left:50%;
-  transform:translateX(-50%);
-  width:0;height:0;
-  border-left:10px solid transparent;
-  border-right:10px solid transparent;
-  border-bottom:30px solid #111;
-  z-index:3;
-}
-
 /* 中心 LOGO */
 .center{
   position:absolute;
-  inset:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  inset:50%;
+  transform:translate(-50%,-50%);
+  width:150px;
+  height:150px;
+  border-radius:50%;
+  overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  z-index:3;
 }
 .center img{
-  width:140px;
-  height:140px;
-  border-radius:50%;
+  width:100%;
+  height:100%;
   object-fit:cover;
-  box-shadow:0 10px 30px rgba(0,0,0,.25);
-  background:#fff;
+}
+
+/* 指针（中间向上） */
+.pointer{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-138px);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-bottom:26px solid #111;
+  z-index:4;
 }
 
 /* 按钮 */
@@ -92,14 +90,61 @@ h1{font-size:22px;margin:6px 0}
   border-radius:16px;
   font-size:16px;
   font-weight:600;
-  cursor:pointer;
 }
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#f1f5ff;color:#2563eb}
+
+.link-box{
+  margin-top:10px;
+  font-size:12px;
+  color:#374151;
+  word-break:break-all;
+}
+
+/* ===== 人品大爆发全屏 ===== */
+#boom{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle,#ffedd5,#fb7185);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:999;
+  animation:pop 0.6s ease;
+}
+#boom h1{
+  font-size:36px;
+  color:#fff;
+  margin-bottom:10px;
+}
+#boom p{
+  font-size:18px;
+  color:#fff;
+}
+
+.coin{
+  position:absolute;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:gold;
+  animation:fall linear infinite;
+}
+
+@keyframes fall{
+  from{transform:translateY(-50px)}
+  to{transform:translateY(110vh)}
+}
+@keyframes pop{
+  from{transform:scale(.7);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
 </style>
 </head>
 
 <body>
+
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
   <div class="sub">邀请好友助力，达到条件必得奖品</div>
@@ -110,8 +155,8 @@ h1{font-size:22px;margin:6px 0}
   </div>
 
   <div class="wheel-wrap">
-    <div class="pointer"></div>
     <canvas id="wheel" width="320" height="320"></canvas>
+    <div class="pointer"></div>
     <div class="center">
       <img src="logo.png">
     </div>
@@ -119,117 +164,108 @@ h1{font-size:22px;margin:6px 0}
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
   <button class="btn primary" id="btnCreate">发起助力试试</button>
+
+  <div class="link-box" id="linkBox"></div>
+</div>
+
+<!-- 人品大爆发 -->
+<div id="boom">
+  <h1>🎉 人品大爆发 🎉</h1>
+  <p>你抽中了 iPhone 17 Pro Max！</p>
 </div>
 
 <script>
-/* ===== Firebase ===== */
-firebase.initializeApp({
-      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-      authDomain: "cut-demo-e11b9.firebaseapp.com",
-      projectId: "cut-demo-e11b9",
-      storageBucket: "cut-demo-e11b9.firebasestorage.app",
-      messagingSenderId: "1065166593402",
-      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
-});
-
 /* ===== 接口 ===== */
-const CREATE_API="https://us-central1-cut-demo-e11b9.cloudfunctions.net/createActivity";
+const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ===== UID ===== */
-let uid=localStorage.getItem("uid");
-if(!uid){
-  uid="u_"+Math.random().toString(36).slice(2);
-  localStorage.setItem("uid",uid);
-}
-
-/* ===== 奖品 & 转盘 ===== */
-const prizeMap=[
-  {key:"66",label:"红包66元"},
-  {key:"88",label:"红包88元"},
-  {key:"168",label:"红包168元"},
-  {key:"388",label:"红包388元"},
-  {key:"588",label:"红包588元"},
-  {key:"888",label:"红包888元"},
-  {key:"iphone",label:"iPhone 17 Pro Max"}
-];
-
-const colors=[
-  "#22c55e","#facc15","#fb7185",
-  "#60a5fa","#a78bfa","#f97316","#ef4444"
+/* ===== 奖品 ===== */
+const PRIZES=[
+  {key:"66",label:"红包66元",color:"#f87171"},
+  {key:"88",label:"红包88元",color:"#fbbf24"},
+  {key:"168",label:"红包168元",color:"#34d399"},
+  {key:"388",label:"红包388元",color:"#60a5fa"},
+  {key:"588",label:"红包588元",color:"#a78bfa"},
+  {key:"888",label:"红包888元",color:"#fb7185"},
+  {key:"iphone",label:"iPhone 17 Pro Max",color:"#f97316"}
 ];
 
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=160;
-const step=2*Math.PI/prizeMap.length;
+const step=2*Math.PI/PRIZES.length;
 
-function drawWheel(){
-  prizeMap.forEach((p,i)=>{
-    ctx.beginPath();
-    ctx.moveTo(R,R);
-    ctx.arc(R,R,R,i*step,(i+1)*step);
-    ctx.fillStyle=colors[i];
-    ctx.fill();
+PRIZES.forEach((p,i)=>{
+  ctx.beginPath();
+  ctx.moveTo(R,R);
+  ctx.arc(R,R,R,i*step,(i+1)*step);
+  ctx.fillStyle=p.color;
+  ctx.fill();
 
-    ctx.save();
-    ctx.translate(R,R);
-    ctx.rotate(i*step+step/2);
-    ctx.fillStyle="#fff";
-    ctx.font="bold 14px sans-serif";
-    ctx.textAlign="right";
-    ctx.fillText(p.label,R-12,6);
-    ctx.restore();
-  });
-}
-drawWheel();
+  ctx.save();
+  ctx.translate(R,R);
+  ctx.rotate(i*step+step/2);
+  ctx.fillStyle="#fff";
+  ctx.font="bold 14px sans-serif";
+  ctx.textAlign="right";
+  ctx.fillText(p.label,R-14,6);
+  ctx.restore();
+});
 
-/* ===== 状态 ===== */
-let activityId=new URLSearchParams(location.search).get("from");
 let angle=0;
+let activityId=new URLSearchParams(location.search).get("from");
 
-/* ===== 发起助力 ===== */
-document.getElementById("btnCreate").onclick=async()=>{
-  const res=await fetch(CREATE_API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid})
-  });
-  const data=await res.json();
-  if(!data.success)return alert("创建失败");
-
-  activityId=data.activityId;
-  document.getElementById("prizeText").innerText=data.prizeName;
-
-  angle+=720+Math.random()*360;
+function spinTo(index){
+  const per=360/PRIZES.length;
+  const target=360-(index*per+per/2);
+  angle+=3*360+target;
   canvas.style.transform=`rotate(${angle}deg)`;
+}
 
-  alert("分享链接给好友助力吧！");
+function boom(){
+  const b=document.getElementById("boom");
+  b.style.display="flex";
+  for(let i=0;i<60;i++){
+    const c=document.createElement("div");
+    c.className="coin";
+    c.style.left=Math.random()*100+"%";
+    c.style.animationDuration=2+Math.random()*2+"s";
+    b.appendChild(c);
+  }
+}
+
+document.getElementById("btnCreate").onclick=async()=>{
+  const res=await fetch(CREATE_API,{method:"POST"});
+  const d=await res.json();
+  if(!d.success)return alert("失败");
+
+  activityId=d.activityId;
+  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+  spinTo(idx);
+
+  document.getElementById("prizeText").innerText=PRIZES[idx].label;
+  document.getElementById("linkBox").innerText=
+    "分享链接："+location.origin+location.pathname+"?from="+activityId;
+
+  if(d.prizeKey==="iphone") setTimeout(boom,2800);
 };
 
-/* ===== 帮助好友助力 ===== */
 document.getElementById("btnHelp").onclick=async()=>{
-  if(!activityId)return alert("请通过好友链接进入");
-
-  angle+=720+Math.random()*360;
-  canvas.style.transform=`rotate(${angle}deg)`;
-
+  if(!activityId)return alert("请通过分享链接进入");
   const res=await fetch(HELP_API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({activityId,uid})
+    body:JSON.stringify({activityId})
   });
-  const data=await res.json();
-  if(!data.success)return alert(data.error||"助力失败");
+  const d=await res.json();
+  if(!d.success)return alert(d.error||"失败");
 
-  document.getElementById("prizeText").innerText=data.prizeName;
-
-  if(data.finished&&data.prizeKey==="iphone"){
-    setTimeout(()=>{
-      alert("🎉🎉🎉 人品大爆发！你获得了 iPhone！");
-    },800);
-  }
+  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+  spinTo(idx);
+  document.getElementById("prizeText").innerText=PRIZES[idx].label;
+  if(d.prizeKey==="iphone") setTimeout(boom,2800);
 };
 </script>
 </body>
 </html>
+
