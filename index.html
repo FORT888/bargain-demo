@@ -13,75 +13,100 @@
 body{
   margin:0;
   height:100vh;
+  background:linear-gradient(180deg,#fff,#f6f8fb);
   display:flex;
   justify-content:center;
   align-items:center;
-  background:#f6f8fb;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif
 }
 .card{
-  width:92%;
+  width:94%;
   max-width:420px;
   background:#fff;
-  border-radius:26px;
-  padding:28px;
-  box-shadow:0 20px 50px rgba(0,0,0,.1);
+  border-radius:28px;
+  padding:26px 22px 30px;
+  box-shadow:0 30px 60px rgba(0,0,0,.12);
   text-align:center
 }
-h1{margin:8px 0 4px;font-size:20px}
-.sub{font-size:13px;color:#6b7280;margin-bottom:16px}
+h1{font-size:20px;margin:6px 0 4px}
+.sub{font-size:13px;color:#6b7280;margin-bottom:14px}
 
-/* 转盘 */
+/* ===== 转盘 ===== */
 .wheel-box{
   position:relative;
-  width:260px;
-  height:260px;
-  margin:0 auto 14px
+  width:280px;
+  height:280px;
+  margin:0 auto 16px
 }
 .wheel{
   width:100%;
   height:100%;
   border-radius:50%;
   background:conic-gradient(
-    #34d399 0% 50%,
-    #fbbf24 50% 95%,
+    #22c55e 0% 50%,
+    #facc15 50% 95%,
     #ef4444 95% 100%
   );
+  box-shadow:inset 0 0 0 10px #fff;
   transition:transform 2.8s cubic-bezier(.25,.8,.25,1)
 }
+
+/* ===== 中心奖池（重点） ===== */
 .center{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:96px;
-  height:96px;
+  width:148px;
+  height:148px;
   border-radius:50%;
-  background:#fff;
+  background:
+    radial-gradient(circle at top left,
+      #ffffff 0%,
+      #f9fafb 55%,
+      #e5e7eb 100%);
+  box-shadow:
+    inset 0 3px 8px rgba(255,255,255,.9),
+    inset 0 -8px 16px rgba(0,0,0,.08),
+    0 18px 36px rgba(0,0,0,.25);
   display:flex;
   align-items:center;
   justify-content:center;
-  box-shadow:0 4px 14px rgba(0,0,0,.15)
 }
+
+/* LOGO 填充 */
 .center img{
-  width:64px;
-  height:64px;
-  object-fit:contain
+  width:82%;
+  height:82%;
+  object-fit:contain;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))
 }
+
+/* ===== 娱乐指针（能量箭头） ===== */
 .pointer{
   position:absolute;
-  top:-10px;
+  top:-18px;
   left:50%;
   transform:translateX(-50%);
-  width:0;height:0;
-  border-left:10px solid transparent;
-  border-right:10px solid transparent;
-  border-bottom:20px solid #111827
+  width:44px;
+  height:44px;
+  background:linear-gradient(135deg,#111827,#374151);
+  clip-path:polygon(50% 0%, 100% 100%, 50% 78%, 0% 100%);
+  box-shadow:0 6px 14px rgba(0,0,0,.35);
+}
+
+/* 抖动 */
+@keyframes shake{
+  0%{transform:rotate(0deg)}
+  25%{transform:rotate(1.5deg)}
+  50%{transform:rotate(-1.5deg)}
+  75%{transform:rotate(1deg)}
+  100%{transform:rotate(0deg)}
 }
 
 .percent{
   font-size:18px;
-  font-weight:600;
+  font-weight:700;
   color:#2563eb;
   margin-bottom:12px
 }
@@ -89,8 +114,8 @@ h1{margin:8px 0 4px;font-size:20px}
 .btn{
   width:100%;
   border:none;
-  border-radius:16px;
-  padding:14px;
+  border-radius:18px;
+  padding:15px;
   font-size:16px;
   font-weight:600;
   margin-top:10px;
@@ -116,6 +141,8 @@ h1{margin:8px 0 4px;font-size:20px}
   <div class="wheel-box">
     <div class="pointer"></div>
     <div class="wheel" id="wheel"></div>
+
+    <!-- 奖池核心 -->
     <div class="center">
       <img src="logo.png">
     </div>
@@ -133,7 +160,6 @@ h1{margin:8px 0 4px;font-size:20px}
 </div>
 
 <script>
-/* Firebase */
 firebase.initializeApp({
       apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
       authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -144,11 +170,12 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-/* 接口 */
 const GET_UID_API="https://getuid-23p22ouguq-uc.a.run.app";
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* UID */
+let uid=null;
+let angle=0;
+
 async function getUid(){
   let u=localStorage.getItem("uid");
   if(u)return u;
@@ -157,20 +184,22 @@ async function getUid(){
   localStorage.setItem("uid",d.uid);
   return d.uid
 }
-let uid=null;
 getUid().then(u=>uid=u);
 
-/* 转盘 */
-let angle=0;
+const params=new URLSearchParams(location.search);
+const activityId=params.get("from");
+
 function rotate(p,first){
   angle=(first?1080:720)+p*3.6;
   wheel.style.transform=`rotate(${angle}deg)`;
-  percent.innerText=`当前进度：${p.toFixed(2)}%`
-}
+  percent.innerText=`当前进度：${p.toFixed(2)}%`;
 
-/* 活动 */
-const params=new URLSearchParams(location.search);
-const activityId=params.get("from");
+  if(p>=95 && p<100){
+    wheel.style.animation="shake .6s ease-in-out";
+    setTimeout(()=>wheel.style.animation="",600);
+    hint.innerText="怎么还差一点点？再拉几位好友试试！";
+  }
+}
 
 async function load(id,first){
   let s=await db.collection("activities").doc(id).get();
@@ -202,5 +231,6 @@ if(activityId)load(activityId,true);
 </script>
 </body>
 </html>
+
 
 
