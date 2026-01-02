@@ -14,41 +14,84 @@ body{
   margin:0;
   min-height:100vh;
   background:radial-gradient(circle at top,#fff7ed,#fee2e2);
-  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-family:"Comic Sans MS","PingFang SC","Microsoft YaHei",sans-serif;
   display:flex;
   justify-content:center;
   align-items:center;
-  overflow:hidden;
 }
+
 .card{
-  width:92%;max-width:420px;background:#fff;border-radius:28px;
-  padding:22px 18px 28px;box-shadow:0 30px 80px rgba(0,0,0,.15);
-  text-align:center;position:relative;z-index:3;
+  width:92%;
+  max-width:420px;
+  background:#fff;
+  border-radius:28px;
+  padding:22px 18px 26px;
+  box-shadow:0 30px 80px rgba(0,0,0,.15);
+  text-align:center;
 }
+
 h1{margin:6px 0;font-size:22px}
-.sub{font-size:13px;color:#6b7280;margin-bottom:8px}
-.prize-box{margin:10px 0;font-size:15px;font-weight:600}
-.prize-box span{color:#dc2626}
-.wheel-wrap{position:relative;width:320px;height:320px;margin:14px auto}
-canvas{width:100%;height:100%;border-radius:50%;
-  transition:transform 3.5s cubic-bezier(.25,.9,.3,1)}
-.center{
-  position:absolute;inset:50%;transform:translate(-50%,-50%);
-  width:160px;height:160px;border-radius:50%;overflow:hidden;
+.sub{font-size:13px;color:#6b7280;margin-bottom:6px}
+
+.prize-box{
+  margin:8px 0 12px;
+  font-size:15px;
+  font-weight:700;
 }
-.center img{width:100%;height:100%;object-fit:cover}
+.prize-box span{color:#dc2626}
+
+/* 转盘 */
+.wheel-wrap{
+  position:relative;
+  width:300px;
+  height:300px;
+  margin:0 auto 10px;
+}
+canvas{
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  transition:transform 3.5s cubic-bezier(.25,.9,.3,1);
+}
+.center{
+  position:absolute;
+  inset:50%;
+  transform:translate(-50%,-50%);
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  overflow:hidden;
+  background:#fff;
+}
+.center img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+/* 进度 */
+.progress{
+  margin-top:8px;
+  font-size:13px;
+  color:#b91c1c;
+}
+
+/* 按钮 */
 .btn{
-  width:100%;margin-top:12px;padding:14px;border:none;
-  border-radius:16px;font-size:16px;font-weight:600;cursor:pointer
+  width:100%;
+  margin-top:10px;
+  padding:14px;
+  border:none;
+  border-radius:16px;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
 }
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
-.progress-wrap{margin-top:14px}
-.progress-bar{height:12px;background:#fde68a;border-radius:999px;overflow:hidden}
-.progress-inner{height:100%;width:0%;background:#ef4444;transition:.4s}
-.progress-text{margin-top:6px;font-size:13px;color:#b91c1c}
-.link-box{
-  margin-top:10px;
+
+.link{
+  margin-top:8px;
   font-size:12px;
   color:#374151;
   word-break:break-all;
@@ -63,29 +106,25 @@ canvas{width:100%;height:100%;border-radius:50%;
   <div class="sub">完成进度越高，奖励越接近</div>
 
   <div class="prize-box">
-    奖品：<span id="prizeText">未确定</span>
+    奖品：<span id="prizeText">未确定</span><br>
+    <small id="tipText">快邀请好友助力吧</small>
   </div>
 
   <div class="wheel-wrap">
-    <canvas id="wheel" width="320" height="320"></canvas>
+    <canvas id="wheel" width="300" height="300"></canvas>
     <div class="center"><img src="logo.png"></div>
   </div>
 
-  <div class="progress-wrap">
-    <div class="progress-bar">
-      <div class="progress-inner" id="progressInner"></div>
-    </div>
-    <div class="progress-text" id="progressPercent">已完成 0%</div>
-  </div>
+  <div class="progress" id="progressText">已助力 0 人</div>
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
   <button class="btn primary" id="btnCreate">发起助力试试</button>
 
-  <div class="link-box" id="linkBox"></div>
+  <div class="link" id="linkBox"></div>
 </div>
 
 <script>
-/* ===== Firebase ===== */
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain:"cut-demo-e11b9.firebaseapp.com",
@@ -93,7 +132,7 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-/* ===== deviceToken ===== */
+/* ================= deviceToken ================= */
 function getDeviceToken(){
   let t=localStorage.getItem("deviceToken");
   if(!t){
@@ -104,11 +143,11 @@ function getDeviceToken(){
 }
 const deviceToken=getDeviceToken();
 
-/* ===== 接口 ===== */
+/* ================= 接口 ================= */
 const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ===== 奖品 ===== */
+/* ================= 奖品 ================= */
 const PRIZES=[
   {key:"66",label:"红包66元"},
   {key:"88",label:"红包88元"},
@@ -119,45 +158,61 @@ const PRIZES=[
   {key:"iphone",label:"iPhone 17 Pro Max"}
 ];
 
-/* ===== 转盘 ===== */
+const COLORS=["#ef4444","#f97316","#facc15","#22c55e","#06b6d4","#3b82f6","#8b5cf6"];
+
+/* ================= 转盘绘制 ================= */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-const R=160,step=2*Math.PI/PRIZES.length;
+const R=150;
+const step=2*Math.PI/PRIZES.length;
+
 PRIZES.forEach((p,i)=>{
-  ctx.beginPath();ctx.moveTo(R,R);
+  ctx.beginPath();
+  ctx.moveTo(R,R);
   ctx.arc(R,R,R,i*step,(i+1)*step);
-  ctx.fillStyle=`hsl(${i*45},80%,80%)`;ctx.fill();
+  ctx.fillStyle=COLORS[i];
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(R,R);
+  ctx.rotate(i*step+step/2);
+  ctx.textAlign="right";
+  ctx.font="bold 14px Comic Sans MS";
+  ctx.fillStyle="#fff";
+  ctx.fillText(p.label,R-16,6);
+  ctx.restore();
 });
+
 let angle=0;
-function spinTo(i){
-  angle+=1440+i*(360/PRIZES.length);
+function spinTo(index){
+  angle+=1440+index*(360/PRIZES.length);
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
-/* ===== 实时监听 ===== */
+/* ================= 实时监听 ================= */
 function watchProgress(id){
   db.collection("activities").doc(id).onSnapshot(s=>{
     if(!s.exists)return;
     const d=s.data();
-    const percent=Math.min(100,(d.helperCount||0)/500*100);
-    document.getElementById("progressInner").style.width=percent+"%";
-    document.getElementById("progressPercent").innerText=
-      percent>=100?"已完成 100%":`已完成 ${percent.toFixed(1)}%`;
+    document.getElementById("progressText").innerText=
+      `已助力 ${d.helperCount||0} 人`;
+
     const p=PRIZES.find(x=>x.key===d.prizeKey);
-    if(p)document.getElementById("prizeText").innerText=p.label;
+    if(p){
+      document.getElementById("prizeText").innerText=p.label;
+    }
   });
 }
 
-/* ===== 页面初始化：恢复旧活动 ===== */
-let activityId = localStorage.getItem("activityId");
-
+/* ================= 初始化 ================= */
+let activityId=localStorage.getItem("activityId");
 if(activityId){
   watchProgress(activityId);
-  document.getElementById("linkBox").innerText =
-    "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+  document.getElementById("linkBox").innerText=
+    "分享链接："+location.origin+location.pathname+"?from="+activityId;
 }
 
-/* ===== 发起助力 ===== */
+/* ================= 发起助力 ================= */
 document.getElementById("btnCreate").onclick=async()=>{
   const r=await fetch(CREATE_API,{
     method:"POST",
@@ -172,13 +227,14 @@ document.getElementById("btnCreate").onclick=async()=>{
   const index=PRIZES.findIndex(p=>p.key===d.prizeKey);
   spinTo(index);
 
-  document.getElementById("linkBox").innerText =
-    "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
+  document.getElementById("prizeText").innerText=PRIZES[index].label;
+  document.getElementById("linkBox").innerText=
+    "分享链接："+location.origin+location.pathname+"?from="+activityId;
 
   watchProgress(activityId);
 };
 
-/* ===== 帮助好友 ===== */
+/* ================= 帮助好友 ================= */
 document.getElementById("btnHelp").onclick=async()=>{
   if(!activityId)return alert("请通过好友分享链接进入");
   const r=await fetch(HELP_API,{
@@ -188,12 +244,12 @@ document.getElementById("btnHelp").onclick=async()=>{
   });
   const d=await r.json();
   if(!d.success)return alert(d.error||"你已助过力");
-  const index=PRIZES.findIndex(p=>p.key===d.prizeKey);
-  spinTo(index);
 };
 </script>
+
 </body>
 </html>
+
 
 
 
