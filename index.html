@@ -25,7 +25,6 @@
       height: 100%;
       margin: 0;
       overflow: hidden;
-      position: fixed;
       background: #f6f8fb;
     }
 
@@ -138,36 +137,38 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    /******** Cloud Function 接口 ********/
+    /******** 后端接口（⚠️ 已更新） ********/
     const HELP_API =
-      "https://us-central1-cut-demo-e11b9.cloudfunctions.net/helpActivity";
+      "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-    /******** 生成本地身份 ********/
-    function getUid() {
+    const GET_UID_API =
+      "https://us-central1-cut-demo-e11b9.cloudfunctions.net/getUid";
+
+    /******** UID：由后端根据 IP 发放 ********/
+    async function getUid() {
       let uid = localStorage.getItem("uid");
-      if (!uid) {
-        uid = "u_" + Math.random().toString(36).slice(2);
-        localStorage.setItem("uid", uid);
-      }
-      return uid;
+      if (uid) return uid;
+
+      const res = await fetch(GET_UID_API);
+      const data = await res.json();
+
+      localStorage.setItem("uid", data.uid);
+      return data.uid;
     }
 
-    const uid = getUid();
+    let uid;
+    getUid().then((u) => (uid = u));
+
     const params = new URLSearchParams(location.search);
     const activityId = params.get("from");
 
-    /******** 设备标识（防刷用） ********/
-    function getDeviceId() {
-      return btoa(
-        navigator.userAgent +
-        screen.width +
-        screen.height +
-        navigator.language
-      );
-    }
-
     /******** 发起助力 ********/
     document.getElementById("btnCreate").onclick = async () => {
+      if (!uid) {
+        alert("身份初始化中，请稍后");
+        return;
+      }
+
       const ref = await db.collection("activities").add({
         owner: uid,
         helperCount: 0,
@@ -185,10 +186,16 @@
       loadActivity(ref.id);
     };
 
-    /******** 帮好友助力（走后端算力 + 防刷） ********/
+    /******** 帮好友助力（IP = UID 强校验） ********/
     document.getElementById("btnHelp").onclick = async () => {
       if (!activityId) {
-        alert("请通过好友分享链接进入");
+        document.getElementById("result").innerText =
+          "请通过好友分享链接进入后再助力";
+        return;
+      }
+
+      if (!uid) {
+        alert("身份初始化中，请稍后");
         return;
       }
 
@@ -197,8 +204,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           activityId,
-          helperId: uid,
-          deviceId: getDeviceId()
+          uid
         })
       });
 
