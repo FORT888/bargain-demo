@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
 <title>联信资 · 助力转盘</title>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <style>
 *{box-sizing:border-box}
 body{
@@ -19,8 +15,10 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
+  overflow:hidden;
 }
 
+/* ===== 卡片 ===== */
 .card{
   width:92%;
   max-width:420px;
@@ -29,37 +27,75 @@ body{
   padding:22px 18px 26px;
   box-shadow:0 30px 80px rgba(0,0,0,.15);
   text-align:center;
+  position:relative;
+  z-index:2;
 }
 
 h1{margin:6px 0;font-size:22px}
 
-.prize-box{
-  margin:10px 0 14px;
-  font-size:15px;
-  font-weight:700;
-}
-.prize-box span{color:#dc2626}
-.prize-tip{font-size:12px;color:#6b7280}
-
-/* ===== 转盘（使用你自己的图片） ===== */
+/* ===== 转盘容器 ===== */
 .wheel-wrap{
   width:300px;
   height:300px;
-  margin:0 auto 16px;
+  margin:16px auto;
   position:relative;
 }
 
-#wheelImg{
+/* 转盘 Canvas */
+#wheel{
   width:100%;
   height:100%;
-  display:block;
   border-radius:50%;
-  transform-origin:50% 50%;
-  transition:transform 3.5s cubic-bezier(.25,.9,.3,1);
+  transition:transform 3.6s cubic-bezier(.25,.9,.25,1);
+  position:relative;
+  z-index:2;
+}
+
+/* 中心 Logo */
+#centerLogo{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:78px;
+  height:78px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:#fff;
+  padding:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+  pointer-events:none;
+  z-index:3;
+}
+
+/* ===== 金币层（在转盘后） ===== */
+.coins-layer{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  z-index:1;              /* 👈 在转盘后面 */
+  pointer-events:none;
+}
+
+/* 单个金币 */
+.coin{
+  position:absolute;
+  top:-40px;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#fff7c2,#f59e0b);
+  box-shadow:0 4px 10px rgba(0,0,0,.25);
+  animation:fall linear infinite;
+  opacity:.9;
+}
+
+@keyframes fall{
+  to{
+    transform:translateY(120vh) rotate(360deg);
+  }
 }
 
 /* ===== 进度条 ===== */
-.progress-wrap{margin:6px 0 10px}
 .progress-bar{
   height:14px;
   background:#fde68a;
@@ -69,13 +105,13 @@ h1{margin:6px 0;font-size:22px}
 .progress-inner{
   height:100%;
   width:0%;
-  background:linear-gradient(90deg,#ef4444,#f97316);
+  background:linear-gradient(90deg,#ef4444,#f59e0b);
   transition:width .4s ease;
 }
 .progress-text{
   margin-top:6px;
   font-size:13px;
-  font-weight:700;
+  font-weight:600;
   color:#b91c1c;
 }
 
@@ -87,18 +123,11 @@ h1{margin:6px 0;font-size:22px}
   border:none;
   border-radius:16px;
   font-size:16px;
-  font-weight:700;
+  font-weight:600;
   cursor:pointer;
 }
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
-
-.link{
-  margin-top:8px;
-  font-size:12px;
-  color:#374151;
-  word-break:break-all;
-}
 </style>
 </head>
 
@@ -107,181 +136,124 @@ h1{margin:6px 0;font-size:22px}
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
 
-  <div class="prize-box">
-    奖品：<span id="prizeText">未确定</span><br>
-    <span class="prize-tip">快邀请好友助力吧</span>
-  </div>
-
-  <!-- 转盘图片 -->
   <div class="wheel-wrap">
-    <img id="wheelImg" src="wheel.png" />
+    <!-- 金币 -->
+    <div class="coins-layer" id="coins"></div>
+
+    <!-- 转盘 -->
+    <canvas id="wheel" width="600" height="600"></canvas>
+
+    <!-- 中心 Logo -->
+    <img id="centerLogo" src="logo.png" />
   </div>
 
-  <!-- 完成进度 -->
-  <div class="progress-wrap">
-    <div class="progress-bar">
-      <div class="progress-inner" id="progressInner"></div>
-    </div>
-    <div class="progress-text" id="progressText">完成进度 0%</div>
+  <div class="progress-bar">
+    <div class="progress-inner" id="progressInner"></div>
   </div>
+  <div class="progress-text" id="progressText">完成进度 0%</div>
 
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
   <button class="btn primary" id="btnCreate">发起助力试试</button>
-
-  <div class="link" id="linkBox"></div>
 </div>
 
 <script>
-/* ================= Firebase ================= */
-firebase.initializeApp({
-  apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-  authDomain:"cut-demo-e11b9.firebaseapp.com",
-  projectId:"cut-demo-e11b9"
+/* ================== 绘制转盘 ================== */
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const R = 300;
+
+const PRIZES = [
+  "66元","88元","388元","588元",
+  "888元","1888元","iPhone","神秘奖"
+];
+
+const COLORS = [
+  "#ef4444","#f97316","#f59e0b","#facc15",
+  "#fb7185","#f43f5e","#eab308","#f87171"
+];
+
+const STEP = Math.PI * 2 / PRIZES.length;
+
+PRIZES.forEach((text,i)=>{
+  const start = i * STEP;
+  const end = start + STEP;
+
+  ctx.beginPath();
+  ctx.moveTo(R,R);
+  ctx.arc(R,R,R,start,end);
+  ctx.fillStyle = COLORS[i];
+  ctx.fill();
+
+  // 高光
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.beginPath();
+  ctx.moveTo(R,R);
+  ctx.arc(R,R,R*0.92,start,end);
+  ctx.fillStyle="#fff";
+  ctx.fill();
+  ctx.restore();
+
+  // 文字
+  ctx.save();
+  ctx.translate(R,R);
+  ctx.rotate(start + STEP/2);
+  ctx.textAlign="right";
+  ctx.font="bold 20px PingFang SC";
+  ctx.fillStyle="#7c2d12";
+  ctx.fillText(text,R-28,8);
+  ctx.restore();
 });
-const db = firebase.firestore();
 
-/* ================= API ================= */
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+// 中心圆
+ctx.beginPath();
+ctx.arc(R,R,42,0,Math.PI*2);
+ctx.fillStyle="#fff7ed";
+ctx.fill();
 
-/* ================= 设备标识 ================= */
-function getDeviceToken(){
-  let t = localStorage.getItem("deviceToken");
-  if(!t){
-    t = crypto.randomUUID();
-    localStorage.setItem("deviceToken", t);
-  }
-  return t;
+/* ================== 转盘旋转 ================== */
+let angle = 0;
+function spin(){
+  angle += 1440 + Math.random()*360;
+  canvas.style.transform = `rotate(${angle}deg)`;
 }
-const deviceToken = getDeviceToken();
 
-/* ================= 奖品映射（仅展示用） ================= */
-const PRIZE_LABEL = {
-  "66":"红包66元",
-  "88":"红包88元",
-  "388":"红包388元",
-  "588":"红包588元",
-  "888":"红包888元",
-  "1888":"红包1888元",
-  "iphone":"iPhone 17 Pro Max"
+/* ================== 金币生成 ================== */
+const coinsBox = document.getElementById("coins");
+
+function spawnCoin(){
+  const c = document.createElement("div");
+  c.className = "coin";
+  c.style.left = Math.random()*100 + "%";
+  c.style.animationDuration = 2 + Math.random()*3 + "s";
+  c.style.opacity = 0.5 + Math.random()*0.5;
+  coinsBox.appendChild(c);
+
+  setTimeout(()=>c.remove(),5000);
+}
+
+// 持续掉落
+setInterval(spawnCoin,300);
+
+/* ================== 按钮示例 ================== */
+document.getElementById("btnCreate").onclick = ()=>{
+  spin();
+  fakeProgress();
+};
+document.getElementById("btnHelp").onclick = ()=>{
+  spin();
+  fakeProgress();
 };
 
-/* ================= 转盘旋转 ================= */
-let currentAngle = 0;
-
-// 如果你只是“转一下效果”，用这个
-function spinRandom(){
-  currentAngle += 1440 + Math.random() * 360;
-  document.getElementById("wheelImg").style.transform =
-    `rotate(${currentAngle}deg)`;
+/* ================== 模拟进度（示意） ================== */
+let p = 0;
+function fakeProgress(){
+  p = Math.min(100, p + Math.random()*8);
+  document.getElementById("progressInner").style.width = p + "%";
+  document.getElementById("progressText").innerText =
+    "完成进度 " + p.toFixed(1) + "%";
 }
-
-/* ================= 实时监听进度 ================= */
-function watchActivity(activityId){
-  db.collection("activities").doc(activityId).onSnapshot(snap=>{
-    if(!snap.exists) return;
-    const d = snap.data();
-
-    if(PRIZE_LABEL[d.prizeKey]){
-      document.getElementById("prizeText").innerText =
-        PRIZE_LABEL[d.prizeKey];
-    }
-
-    const percent = Math.min(100, d.progress || 0);
-    document.getElementById("progressInner").style.width = percent + "%";
-    document.getElementById("progressText").innerText =
-      percent >= 100
-        ? "完成进度 100%"
-        : `完成进度 ${percent.toFixed(1)}%`;
-
-    if(percent >= 100){
-      document.getElementById("btnHelp").disabled = true;
-      document.getElementById("btnCreate").disabled = true;
-    }
-  });
-}
-
-/* ================= 读取 from ================= */
-const params = new URLSearchParams(location.search);
-let fromId = params.get("from");
-if(!fromId || fromId==="undefined" || fromId==="null"){
-  fromId = null;
-}
-
-let activityId = fromId || localStorage.getItem("activityId");
-
-if(activityId){
-  watchActivity(activityId);
-
-  if(!fromId){
-    localStorage.setItem("activityId", activityId);
-    document.getElementById("linkBox").innerText =
-      "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
-  }
-}
-
-/* ================= 发起助力 ================= */
-document.getElementById("btnCreate").onclick = async ()=>{
-  const btn = document.getElementById("btnCreate");
-  btn.disabled = true;
-  spinRandom();
-
-  try{
-    const res = await fetch(CREATE_API,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ deviceToken })
-    });
-    const d = await res.json();
-    if(!d.success) throw new Error(d.error || "创建失败");
-
-    activityId = d.activityId;
-    localStorage.setItem("activityId", activityId);
-
-    history.replaceState(null,"",
-      location.pathname + "?from=" + activityId
-    );
-
-    watchActivity(activityId);
-
-    document.getElementById("linkBox").innerText =
-      "分享链接：" + location.origin + location.pathname + "?from=" + activityId;
-
-  }catch(e){
-    alert(e.message);
-  }finally{
-    btn.disabled = false;
-  }
-};
-
-/* ================= 帮助好友 ================= */
-document.getElementById("btnHelp").onclick = async ()=>{
-  if(!activityId){
-    alert("请通过好友分享链接进入");
-    return;
-  }
-
-  const btn = document.getElementById("btnHelp");
-  btn.disabled = true;
-  spinRandom();
-
-  try{
-    const res = await fetch(HELP_API,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ activityId, deviceToken })
-    });
-    const d = await res.json();
-    if(!d.success) throw new Error(d.error || "你已助过力");
-  }catch(e){
-    alert(e.message);
-  }finally{
-    btn.disabled = false;
-  }
-};
 </script>
 
 </body>
 </html>
-
-
