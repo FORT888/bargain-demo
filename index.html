@@ -19,15 +19,20 @@ body{
 }
 
 /* ===================================================
-   第二层：金币 + 渐变玻璃层（透底）
+   第二层：金币 + 渐变玻璃层（不拦截点击）
 =================================================== */
+#coins-mid,
+#coins-mid *,
+#coins-mid::after{
+  pointer-events:none;   /* ⭐ 核心修复 */
+}
+
 #coins-mid{
   position:fixed;
   inset:0;
   z-index:2;
-  pointer-events:none;
 
-  /* 玻璃感渐变（透出背景） */
+  /* 玻璃渐变，透底 */
   background:linear-gradient(
     to bottom,
     rgba(255,255,255,0.14) 0%,
@@ -36,7 +41,7 @@ body{
     rgba(255,255,255,0) 85%
   );
 
-  /* 控制金币整体消失 */
+  /* 金币向下消失 */
   mask-image: linear-gradient(
     to bottom,
     rgba(0,0,0,1) 0%,
@@ -65,18 +70,15 @@ body{
   animation:fall-mid linear infinite;
 }
 
-/* 下落动画 */
 @keyframes fall-mid{
   to{transform:translateY(110vh) rotate(360deg)}
 }
 
-/* 转盘区域柔性暗化（重点） */
+/* 转盘区域柔性暗化 */
 #coins-mid::after{
   content:"";
   position:absolute;
   inset:0;
-  pointer-events:none;
-
   background:
     radial-gradient(
       circle at 50% 48%,
@@ -88,7 +90,7 @@ body{
 }
 
 /* ===================================================
-   第三层：主卡片（转盘）
+   第三层：主卡片
 =================================================== */
 .card{
   width:92%;
@@ -164,7 +166,7 @@ canvas{
 <!-- 第二层金币 -->
 <div id="coins-mid"></div>
 
-<!-- 第三层卡片 -->
+<!-- 主卡片 -->
 <div class="card">
   <h1>联信资 · 助力转盘</h1>
   <div class="sub">完成进度越高，奖励越接近</div>
@@ -178,8 +180,8 @@ canvas{
     <div class="center"><img src="logo.png"></div>
   </div>
 
-  <button class="btn secondary">帮助好友助力</button>
-  <button class="btn primary">发起助力试试</button>
+  <button class="btn secondary" id="btnHelp">帮助好友助力</button>
+  <button class="btn primary" id="btnCreate">发起助力试试</button>
 </div>
 
 <script>
@@ -234,8 +236,17 @@ for(let i=0;i<18;i++){
   c.style.animationDelay=Math.random()*6+"s";
   mid.appendChild(c);
 }
+
+/* ================= 测试按钮是否可点 ================= */
+document.getElementById("btnCreate").onclick=()=>{
+  alert("发起助力按钮可点击 ✅");
+};
+document.getElementById("btnHelp").onclick=()=>{
+  alert("帮助好友助力按钮可点击 ✅");
+};
 </script>
 
 </body>
 </html>
+
 
