@@ -40,7 +40,7 @@ h1{margin:6px 0 2px;font-size:22px}
 }
 .prize-box span{color:#dc2626}
 
-/* ===== 转盘区域 ===== */
+/* ===== 转盘 ===== */
 .wheel-wrap{
   width:300px;
   height:300px;
@@ -48,7 +48,7 @@ h1{margin:6px 0 2px;font-size:22px}
   position:relative;
 }
 
-/* 转盘 */
+/* 转盘本体 */
 #wheel{
   width:100%;
   height:100%;
@@ -79,17 +79,19 @@ h1{margin:6px 0 2px;font-size:22px}
   pointer-events:none;
 }
 
+/* 单个红包 */
 .redpack{
   position:absolute;
-  top:-30px;
+  top:-40px;
   width:26px;
   height:34px;
   background:#dc2626;
   border-radius:4px;
-  animation:fall linear infinite;
+  opacity:0;
+  animation:fallFade linear forwards;
 }
 
-/* 金封口 */
+/* 金色封口 */
 .redpack::before{
   content:"";
   position:absolute;
@@ -101,9 +103,21 @@ h1{margin:6px 0 2px;font-size:22px}
   border-radius:4px 4px 0 0;
 }
 
-@keyframes fall{
-  to{
+/* ✨ 核心动画：渐入 → 下落 → 渐出 */
+@keyframes fallFade{
+  0%{
+    transform:translateY(0);
+    opacity:0;
+  }
+  15%{
+    opacity:0.85;
+  }
+  85%{
+    opacity:0.85;
+  }
+  100%{
     transform:translateY(120vh);
+    opacity:0;
   }
 }
 
@@ -173,7 +187,7 @@ h1{margin:6px 0 2px;font-size:22px}
 </div>
 
 <script>
-/* ================== 转盘绘制 ================== */
+/* ================= 转盘绘制 ================= */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -200,7 +214,6 @@ PRIZES.forEach((text,i)=>{
   ctx.fillStyle = COLORS[i];
   ctx.fill();
 
-  // 文字（明显加大）
   ctx.save();
   ctx.translate(R,R);
   ctx.rotate(start + STEP/2);
@@ -211,32 +224,35 @@ PRIZES.forEach((text,i)=>{
   ctx.restore();
 });
 
-/* ================== 旋转 ================== */
+/* ================= 转盘旋转 ================= */
 let angle = 0;
 function spin(){
   angle += 1440 + Math.random()*360;
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ================== 红包雨 ================== */
+/* ================= 红包雨（慢 + 渐入渐出） ================= */
 const box = document.getElementById("packs");
 
 function spawnPack(){
   const p = document.createElement("div");
   p.className = "redpack";
   p.style.left = Math.random()*100 + "%";
-  p.style.animationDuration = 4 + Math.random()*2 + "s"; // 慢一点
+
+  // ✨ 慢速（关键）
+  p.style.animationDuration =
+    7 + Math.random()*3 + "s"; // 7~10 秒
+
   box.appendChild(p);
-  setTimeout(()=>p.remove(),7000);
+  setTimeout(()=>p.remove(),12000);
 }
 
-setInterval(spawnPack,450);
+// 稀疏生成（不密集）
+setInterval(spawnPack,800);
 
-/* ================== 演示交互 ================== */
+/* ================= 示例交互 ================= */
 document.getElementById("btnCreate").onclick = ()=>{
   spin();
-  document.getElementById("prizeText").innerText =
-    PRIZES[Math.floor(Math.random()*PRIZES.length)];
   fakeProgress();
 };
 document.getElementById("btnHelp").onclick = ()=>{
@@ -246,7 +262,7 @@ document.getElementById("btnHelp").onclick = ()=>{
 
 let p = 0;
 function fakeProgress(){
-  p = Math.min(100, p + Math.random()*6);
+  p = Math.min(100, p + Math.random()*5);
   document.getElementById("progressInner").style.width = p + "%";
   document.getElementById("progressText").innerText =
     "完成进度 " + p.toFixed(1) + "%";
@@ -255,4 +271,5 @@ function fakeProgress(){
 
 </body>
 </html>
+
 
