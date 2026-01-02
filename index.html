@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -18,7 +17,6 @@ body{
   justify-content:center;
   align-items:center;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-  overflow:hidden;
 }
 .card{
   width:92%;
@@ -39,12 +37,35 @@ h1{font-size:22px;margin:6px 0}
 }
 .prize-box span{color:#e11d48}
 
-/* 转盘 */
+/* ===== 进度条 ===== */
+.progress-wrap{
+  margin:12px 0;
+}
+.progress-text{
+  font-size:13px;
+  color:#374151;
+  margin-bottom:6px;
+}
+.progress-bar{
+  width:100%;
+  height:10px;
+  background:#e5e7eb;
+  border-radius:999px;
+  overflow:hidden;
+}
+.progress{
+  height:100%;
+  width:100%;
+  background:linear-gradient(90deg,#2563eb,#60a5fa);
+  transition:width .4s;
+}
+
+/* ===== 转盘 ===== */
 .wheel-wrap{
-  position:relative;
   width:320px;
   height:320px;
-  margin:14px auto;
+  margin:16px auto;
+  position:relative;
 }
 canvas{
   width:100%;
@@ -52,18 +73,15 @@ canvas{
   border-radius:50%;
   transition:transform 3s cubic-bezier(.25,.9,.3,1);
 }
-
-/* 中心 LOGO */
 .center{
   position:absolute;
   inset:50%;
   transform:translate(-50%,-50%);
-  width:150px;
-  height:150px;
+  width:140px;
+  height:140px;
   border-radius:50%;
   overflow:hidden;
   box-shadow:0 10px 30px rgba(0,0,0,.25);
-  z-index:3;
 }
 .center img{
   width:100%;
@@ -71,20 +89,7 @@ canvas{
   object-fit:cover;
 }
 
-/* 指针（中心向上） */
-.pointer{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-138px);
-  width:0;height:0;
-  border-left:10px solid transparent;
-  border-right:10px solid transparent;
-  border-bottom:26px solid #111;
-  z-index:4;
-}
-
-/* 按钮 */
+/* ===== 按钮 ===== */
 .btn{
   width:100%;
   margin-top:12px;
@@ -96,7 +101,11 @@ canvas{
 }
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#f1f5ff;color:#2563eb}
+button:disabled{
+  background:#c7d2fe;
+}
 
+/* ===== 分享链接 ===== */
 .link-box{
   margin-top:10px;
   font-size:12px;
@@ -104,29 +113,39 @@ canvas{
   word-break:break-all;
 }
 
-/* iPhone 人品大爆发 */
-#boom{
+/* ===== 弹窗 ===== */
+.modal{
   position:fixed;
   inset:0;
-  background:radial-gradient(circle,#fde68a,#fb7185);
+  background:rgba(0,0,0,.45);
   display:none;
   justify-content:center;
   align-items:center;
-  flex-direction:column;
   z-index:999;
 }
-#boom h1{font-size:36px;color:#fff}
-#boom p{font-size:18px;color:#fff}
-.coin{
-  position:absolute;
-  width:26px;height:26px;
-  border-radius:50%;
-  background:gold;
-  animation:fall linear infinite;
+.modal-card{
+  width:80%;
+  max-width:300px;
+  background:#fff;
+  border-radius:20px;
+  padding:22px;
+  text-align:center;
+  animation:pop .3s ease;
 }
-@keyframes fall{
-  from{transform:translateY(-40px)}
-  to{transform:translateY(110vh)}
+.modal-card h2{margin:0 0 6px}
+.modal-card button{
+  margin-top:14px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#2563eb;
+  color:#fff;
+  font-size:15px;
+}
+@keyframes pop{
+  from{transform:scale(.8);opacity:0}
+  to{transform:scale(1);opacity:1}
 }
 </style>
 </head>
@@ -138,49 +157,53 @@ canvas{
   <div class="sub">先帮好友助力，再发起自己的活动</div>
 
   <div class="prize-box">
-    奖品：<span id="prizeText">未确定</span><br>
-    快邀请好友助力吧
+    奖品：<span id="prizeText">未确定</span>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-text">
+      剩余助力进度 <span id="percentText">100%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress" id="progress"></div>
+    </div>
   </div>
 
   <div class="wheel-wrap">
     <canvas id="wheel" width="320" height="320"></canvas>
-    <div class="pointer"></div>
     <div class="center">
       <img src="logo.png">
     </div>
   </div>
 
-  <!-- 第一个按钮：帮好友 -->
   <button class="btn secondary" id="btnHelp">帮助好友助力</button>
-
-  <!-- 第二个按钮：自己发起 -->
-  <button class="btn primary" id="btnCreate">发起助力试试</button>
+  <button class="btn primary" id="btnCreate" disabled>发起助力试试</button>
 
   <div class="link-box" id="linkBox"></div>
 </div>
 
-<div id="boom">
-  <h1>🎉 人品大爆发 🎉</h1>
-  <p>你抽中了 iPhone 17 Pro Max！</p>
+<!-- 助力成功弹窗 -->
+<div class="modal" id="helpModal">
+  <div class="modal-card">
+    <h2>🎉 助力成功</h2>
+    <p>你已成功帮助好友助力</p>
+    <button id="modalBtn">我知道了</button>
+  </div>
 </div>
 
 <script>
-/* ========= Firebase 配置（填你自己的） ========= */
-const firebaseConfig = {
-      apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-      authDomain: "cut-demo-e11b9.firebaseapp.com",
-      projectId: "cut-demo-e11b9",
-      storageBucket: "cut-demo-e11b9.firebasestorage.app",
-      messagingSenderId: "1065166593402",
-      appId: "1:1065166593402:web:3a260d266b39c14c9fcac3"
-};
-firebase.initializeApp(firebaseConfig);
+/* ===== Firebase 配置 ===== */
+firebase.initializeApp({
+  apiKey:"你的",
+  authDomain:"你的",
+  projectId:"你的"
+});
 
-/* ========= 后端接口 ========= */
-const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
+/* ===== 接口 ===== */
+const CREATE_API="https://createactivity-xxx";
+const HELP_API="https://helpactivity-xxx";
 
-/* ========= 奖品 ========= */
+/* ===== 奖品 ===== */
 const PRIZES=[
   {key:"66",label:"红包66元",color:"#f87171"},
   {key:"88",label:"红包88元",color:"#fbbf24"},
@@ -191,7 +214,7 @@ const PRIZES=[
   {key:"iphone",label:"iPhone 17 Pro Max",color:"#f97316"}
 ];
 
-/* ========= 画转盘 ========= */
+/* ===== 画转盘 ===== */
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 const R=160;
@@ -215,6 +238,8 @@ PRIZES.forEach((p,i)=>{
 });
 
 let angle=0;
+let helped=false;
+let percent=100;
 let activityId=new URLSearchParams(location.search).get("from");
 
 function spinTo(index){
@@ -224,65 +249,35 @@ function spinTo(index){
   canvas.style.transform=`rotate(${angle}deg)`;
 }
 
-function boom(){
-  const b=document.getElementById("boom");
-  b.style.display="flex";
-  for(let i=0;i<60;i++){
-    const c=document.createElement("div");
-    c.className="coin";
-    c.style.left=Math.random()*100+"%";
-    c.style.animationDuration=2+Math.random()*2+"s";
-    b.appendChild(c);
-  }
-}
+/* ===== 帮好友 ===== */
+btnHelp.onclick=async()=>{
+  if(!activityId){alert("请通过好友链接进入");return;}
+  if(helped) return;
 
-/* ===== 帮好友助力（第一个按钮） ===== */
-document.getElementById("btnHelp").onclick=async()=>{
-  if(!activityId){
-    alert("请通过好友分享链接进入");
-    return;
-  }
-
-  const res=await fetch(HELP_API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({activityId})
-  });
-  const d=await res.json();
-  if(!d.success){
-    alert(d.error||"你已助过力了");
-    return;
-  }
-
-  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
-  spinTo(idx);
-  document.getElementById("prizeText").innerText=PRIZES[idx].label;
-
-  if(d.prizeKey==="iphone") setTimeout(boom,2500);
+  helped=true;
+  percent-=30;
+  document.getElementById("progress").style.width=percent+"%";
+  document.getElementById("percentText").innerText=percent+"%";
+  document.getElementById("helpModal").style.display="flex";
+  btnCreate.disabled=false;
 };
 
-/* ===== 自己发起助力（第二个按钮） ===== */
-document.getElementById("btnCreate").onclick=async()=>{
-  const res=await fetch(CREATE_API,{method:"POST"});
-  const d=await res.json();
-  if(!d.success){
-    alert("创建失败");
-    return;
-  }
+/* ===== 关闭弹窗 ===== */
+modalBtn.onclick=()=>helpModal.style.display="none";
 
-  activityId=d.activityId;
-  const idx=PRIZES.findIndex(p=>p.key===d.prizeKey);
+/* ===== 发起 ===== */
+btnCreate.onclick=async()=>{
+  const idx=Math.floor(Math.random()*PRIZES.length);
   spinTo(idx);
-
-  document.getElementById("prizeText").innerText=PRIZES[idx].label;
-  document.getElementById("linkBox").innerText=
-    "分享链接："+location.origin+location.pathname+"?from="+activityId;
-
-  if(d.prizeKey==="iphone") setTimeout(boom,2500);
+  prizeText.innerText=PRIZES[idx].label;
+  activityId="id"+Date.now();
+  linkBox.innerText="分享链接："+location.origin+location.pathname+"?from="+activityId;
 };
 </script>
+
 </body>
 </html>
+
 
 
 
