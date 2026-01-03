@@ -1,324 +1,183 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>联信资 · 助力转盘</title>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<meta charset="UTF-8">
+<title>幸运大转盘</title>
 
 <style>
 body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:radial-gradient(circle at top,#fff7ed,#fee2e2);
-  font-family:"PingFang SC","Microsoft YaHei",sans-serif;
-}
-.card{
-  width:92%;
-  max-width:420px;
-  background:#fff;
-  border-radius:24px;
-  padding:20px;
   text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.15);
+  font-family:"PingFang SC","Microsoft YaHei",Arial;
 }
-h1{margin:8px 0}
-.prize-box{font-weight:700;margin-bottom:10px}
-.prize-box span{color:#dc2626}
 
-/* ================= 转盘 ================= */
+/* 容器 */
 .wheel-wrap{
   position:relative;
-  width:300px;
-  height:300px;
-  margin:0 auto;
+  width:400px;
+  margin:20px auto;
 }
 
-/* ================= 中心指针（唯一修改区域） ================= */
-.pointer-center{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
+/* 顶部固定指针（你给的方案） */
+.pointer{
   width:0;
   height:0;
-  z-index:12;
-  pointer-events:none;
-}
-
-/* 指针杆：从中心向外 */
-.pointer-arm{
+  border-left:15px solid transparent;
+  border-right:15px solid transparent;
+  border-bottom:30px solid red;
   position:absolute;
-  left:-2px;
-  bottom:0;
-  width:4px;
-  height:92px;              /* 指针长度（刚好到外圈） */
-  background:#e11d48;
-  border-radius:2px;
-  transform-origin:bottom center;
-}
-
-/* 指针头：小三角 */
-.pointer-head{
-  position:absolute;
-  left:-7px;
-  bottom:92px;
-  width:0;
-  height:0;
-  border-left:7px solid transparent;
-  border-right:7px solid transparent;
-  border-bottom:12px solid #e11d48;
-}
-
-/* 指针弹动（围绕中心轻微摆动） */
-@keyframes centerPointerBounce{
-  0%   { transform:translate(-50%,-50%) rotate(0deg); }
-  40%  { transform:translate(-50%,-50%) rotate(-6deg); }
-  70%  { transform:translate(-50%,-50%) rotate(3deg); }
-  100% { transform:translate(-50%,-50%) rotate(0deg); }
-}
-.pointer-center.bounce{
-  animation:centerPointerBounce .4s ease-out;
-}
-/* ================= 指针结束 ================= */
-
-/* 转盘 */
-#wheel{
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  transition:transform 3.6s cubic-bezier(.25,.9,.25,1);
-}
-
-/* 中心 LOGO */
-.center-logo{
-  position:absolute;
+  top:-6px;
   left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  pointer-events:none;
-  z-index:4;
+  transform:translateX(-50%);
+  z-index:10;
 }
 
-/* ================= 进度条 ================= */
-.progress-bar{
-  height:14px;
-  background:#fde68a;
-  border-radius:999px;
-  overflow:hidden;
+canvas{
+  background:#fff;
+  border-radius:50%;
+  box-shadow:0 0 10px rgba(0,0,0,.2);
 }
-.progress-inner{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#ef4444,#f59e0b);
-}
-.progress-text{font-size:13px;margin-top:6px}
 
 button{
-  width:100%;
-  margin-top:10px;
-  padding:14px;
-  border:none;
-  border-radius:14px;
+  margin-top:20px;
+  padding:10px 20px;
   font-size:16px;
-}
-.primary{background:#ef4444;color:#fff}
-.secondary{background:#fff1f2;color:#ef4444}
-button:disabled{opacity:.5}
-
-.link{
-  font-size:12px;
-  margin-top:8px;
-  word-break:break-all;
 }
 </style>
 </head>
 
 <body>
 
-<div class="card">
-  <h1>联信资 · 助力转盘</h1>
-  <div class="prize-box">奖品：<span id="prizeText">未确定</span></div>
+<h2>幸运大转盘</h2>
 
-  <div class="wheel-wrap">
-    <!-- 中心指针（结构只在这里变） -->
-    <div class="pointer-center" id="pointer">
-      <div class="pointer-arm"></div>
-      <div class="pointer-head"></div>
-    </div>
-
-    <!-- 转盘 -->
-    <canvas id="wheel" width="600" height="600"></canvas>
-
-    <!-- 中心 LOGO -->
-    <img src="logo.png" class="center-logo">
-  </div>
-
-  <div class="progress-bar">
-    <div class="progress-inner" id="progressInner"></div>
-  </div>
-  <div class="progress-text" id="progressText">完成进度 0%</div>
-
-  <button id="btnHelp" class="secondary">帮助好友助力</button>
-  <button id="btnCreate" class="primary">发起助力试试</button>
-
-  <div class="link" id="shareLink"></div>
+<div class="wheel-wrap">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="400" height="400"></canvas>
 </div>
 
+<button onclick="startSpin()">开始旋转（模拟后端）</button>
+
 <script>
-/* ========= 以下 JS 与你之前一致，未修改 ========= */
+/* ==================== 转盘配置 ==================== */
 
-function genUUID(){
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
-    const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
-    return v.toString(16);
-  });
-}
+// 奖品（顺序 = 扇形顺序，**非常重要**）
+const PRIZES = [
+  { key:"66",   label:"66元" },
+  { key:"88",   label:"88元" },
+  { key:"388",  label:"388元" },
+  { key:"588",  label:"588元" },
+  { key:"888",  label:"888元" },
+  { key:"1888", label:"1888元" },
+  { key:"iphone", label:"iPhone" }
+];
 
-firebase.initializeApp({
-  apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-  authDomain: "cut-demo-e11b9.firebaseapp.com",
-  projectId: "cut-demo-e11b9"
-});
-const db = firebase.firestore();
-
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
-
-let deviceId = localStorage.getItem("deviceId");
-if(!deviceId){
-  deviceId = genUUID();
-  localStorage.setItem("deviceId", deviceId);
-}
-
-const params = new URLSearchParams(location.search);
-const fromActivityId = params.get("from");
-
-const btnHelp = document.getElementById("btnHelp");
-const btnCreate = document.getElementById("btnCreate");
-const pointer = document.getElementById("pointer");
-
-if(!fromActivityId){
-  btnHelp.disabled = true;
-  btnHelp.innerText = "请分享链接给好友助力";
-}
+const COLORS = [
+  "#f44336","#ff9800","#ffeb3b",
+  "#4caf50","#03a9f4","#9c27b0","#00bcd4"
+];
 
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
-const R = 300;
 
-const PRIZES = [
-  {key:"66",label:"66元"},
-  {key:"88",label:"88元"},
-  {key:"388",label:"388元"},
-  {key:"588",label:"588元"},
-  {key:"888",label:"888元"},
-  {key:"1888",label:"1888元"},
-  {key:"iphone",label:"iPhone"}
-];
+const cx = canvas.width / 2;
+const cy = canvas.height / 2;
+const radius = 180;
+const count = PRIZES.length;
+const arc = 2 * Math.PI / count;
 
-const STEP = 2*Math.PI / PRIZES.length;
+/* ==================== 当前角度 ==================== */
+let currentAngle = 0;
+let spinning = false;
 
-PRIZES.forEach((p,i)=>{
-  ctx.beginPath();
-  ctx.moveTo(R,R);
-  ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
-  ctx.fillStyle = `hsl(${i*40},80%,70%)`;
-  ctx.fill();
+/* ==================== 绘制转盘 ==================== */
+function drawWheel(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.save();
-  ctx.translate(R,R);
-  ctx.rotate(i*STEP+STEP/2);
-  ctx.textAlign="right";
-  ctx.font="bold 30px PingFang SC";
-  ctx.fillStyle="#7c2d12";
-  ctx.fillText(p.label,R-40,10);
-  ctx.restore();
-});
+  for(let i=0;i<count;i++){
+    const start = currentAngle + i * arc;
+    const end = start + arc;
 
-function spinTo(prizeKey){
-  const idx = PRIZES.findIndex(p=>p.key===prizeKey);
-  if(idx<0) return;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
 
-  const per = 360 / PRIZES.length;
-  const angle = 360*4 + (360 - (idx*per + per/2));
-
-  pointer.classList.remove("bounce");
-  void pointer.offsetWidth;
-  pointer.classList.add("bounce");
-
-  canvas.style.transform = `rotate(${angle}deg)`;
+    // 文字
+    ctx.save();
+    ctx.translate(
+      cx + Math.cos(start + arc/2) * 120,
+      cy + Math.sin(start + arc/2) * 120
+    );
+    ctx.rotate(start + arc/2);
+    ctx.fillStyle="#000";
+    ctx.font="14px Arial";
+    ctx.fillText(PRIZES[i].label, -ctx.measureText(PRIZES[i].label).width/2, 0);
+    ctx.restore();
+  }
 }
 
-function watch(activityId){
-  db.collection("activities").doc(activityId).onSnapshot(snap=>{
-    if(!snap.exists) return;
-    const d=snap.data();
-    const p=Number(d.progress||0);
-    document.getElementById("progressInner").style.width=p+"%";
-    document.getElementById("progressText").innerText="完成进度 "+p.toFixed(1)+"%";
-    const prize=PRIZES.find(x=>x.key===d.prizeKey);
-    if(prize) document.getElementById("prizeText").innerText=prize.label;
-  });
-}
+drawWheel();
 
-btnCreate.onclick = async ()=>{
-  const r = await fetch(CREATE_API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-device-id":deviceId
-    }
-  });
-  const d = await r.json();
-  if(!d.success){ alert(d.error); return; }
+/* ==================== 核心：转到指定奖品 ==================== */
+function spinToPrize(prizeKey){
+  if(spinning) return;
+  spinning = true;
 
-  spinTo(d.prizeKey);
-  watch(d.activityId);
-
-  document.getElementById("shareLink").innerText =
-    location.origin + location.pathname + "?from=" + d.activityId;
-};
-
-btnHelp.onclick = async ()=>{
-  if(btnHelp.disabled) return;
-
-  const r = await fetch(HELP_API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-device-id":deviceId
-    },
-    body:JSON.stringify({ activityId: fromActivityId })
-  });
-  const d = await r.json();
-
-  if(!d.success){
-    alert(d.error||"你已经助过力了");
-    btnHelp.disabled=true;
-    btnHelp.innerText="已助力";
+  // 1️⃣ 找到后端给的奖品 index
+  const index = PRIZES.findIndex(p=>p.key===prizeKey);
+  if(index < 0){
+    alert("未知奖品");
+    spinning = false;
     return;
   }
 
-  btnHelp.disabled=true;
-  btnHelp.innerText="已成功助力 🎉";
-};
+  // 2️⃣ 计算目标角度
+  // 指针在 12 点方向 = -90°
+  const target =
+    360 * 4 +                       // 多转几圈
+    (360 - (index * 360 / count + 360 / count / 2));
 
-if(fromActivityId){
-  watch(fromActivityId);
+  const start = currentAngle * 180 / Math.PI;
+  const change = target - start;
+
+  const duration = 3000;
+  const startTime = performance.now();
+
+  function animate(t){
+    const progress = Math.min((t - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    const angleDeg = start + change * ease;
+    currentAngle = angleDeg * Math.PI / 180;
+
+    drawWheel();
+
+    if(progress < 1){
+      requestAnimationFrame(animate);
+    }else{
+      spinning = false;
+      alert("🎉 抽中：" + PRIZES[index].label);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/* ==================== 模拟后端返回 ==================== */
+function startSpin(){
+  // 👉 真实情况：这里是 fetch 后端接口
+  // const res = await fetch(...)
+  // const prizeKey = res.prizeKey;
+
+  // 现在模拟后端返回
+  const mockPrizeKey = "888"; // ← 后端说中 888
+  spinToPrize(mockPrizeKey);
 }
 </script>
 
 </body>
 </html>
+
 
 
 
