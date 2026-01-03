@@ -23,36 +23,31 @@ body{
   padding:22px 18px 44px;
 }
 
-/* ===== 头部 ===== */
+/* 头部 */
 .brand{text-align:center;margin-bottom:14px;}
 .brand-logo{width:92px;margin:0 auto 10px;}
 .brand-logo img{width:100%;display:block;}
 .brand-title{font-size:34px;font-weight:900;}
 .brand-subtitle{font-size:14px;margin-top:4px;color:#777;letter-spacing:6px;}
 
-/* ===== 卡片 ===== */
 .card{
   background:rgba(255,255,255,.94);
-  backdrop-filter:blur(6px);
   border-radius:26px;
   padding:28px 22px 36px;
   margin-top:18px;
   box-shadow:0 28px 60px rgba(0,0,0,.12);
 }
 
-/* ===== 抽奖圆 ===== */
+/* 抽奖圆 */
 .hero{display:flex;justify-content:center;margin:26px 0 22px;}
 .circle{
   width:260px;height:260px;border-radius:50%;
   background:radial-gradient(circle at 30% 30%, #ffffff, #ededed);
-  box-shadow:
-    inset 0 0 45px rgba(255,255,255,.9),
-    inset 0 0 18px rgba(0,0,0,.04),
-    0 22px 48px rgba(0,0,0,.18);
+  box-shadow:0 22px 48px rgba(0,0,0,.18);
   position:relative;overflow:hidden;
 }
 
-/* ===== 进度 ===== */
+/* 进度 */
 .progress-title{
   position:absolute;bottom:54px;left:50%;
   transform:translateX(-50%);
@@ -71,7 +66,7 @@ body{
   font-size:12px;font-weight:600;color:#e60023;
 }
 
-/* ===== 奖品 ===== */
+/* 奖品 */
 .prize-item{
   position:absolute;
   top:-110px;
@@ -95,7 +90,7 @@ body{
   100%{transform:translate(-50%,135px) scale(1);opacity:0}
 }
 
-/* ===== 恭喜文案 ===== */
+/* 恭喜 */
 .congrats{
   margin-top:10px;
   font-size:15px;
@@ -105,7 +100,7 @@ body{
   display:none;
 }
 
-/* ===== 按钮 ===== */
+/* 按钮 */
 button{
   width:100%;
   padding:16px;
@@ -114,16 +109,8 @@ button{
   font-size:16px;
   margin-top:16px;
 }
-.primary{
-  background:linear-gradient(180deg,#ff3b30,#e60023);
-  color:#fff;
-  font-weight:700;
-}
-.secondary{
-  background:#fff1f3;
-  color:#e60023;
-  font-weight:600;
-}
+.primary{background:#e60023;color:#fff;font-weight:700;}
+.secondary{background:#fff1f3;color:#e60023;font-weight:600;}
 button:disabled{opacity:.5}
 
 .link{
@@ -146,13 +133,10 @@ button:disabled{opacity:.5}
   </div>
 
   <div class="card">
-
     <div class="hero">
       <div class="circle" id="circle">
         <div class="progress-title">完成进度</div>
-        <div class="progress-wrap">
-          <div class="progress-inner" id="progressInner"></div>
-        </div>
+        <div class="progress-wrap"><div class="progress-inner" id="progressInner"></div></div>
         <div class="progress-text" id="progressText">0%</div>
       </div>
     </div>
@@ -193,65 +177,40 @@ function genUUID(){
 let deviceId=localStorage.deviceId||(localStorage.deviceId=genUUID());
 
 const circle=document.getElementById("circle");
-const progressInner=document.getElementById("progressInner");
-const progressText=document.getElementById("progressText");
 const btnCreate=document.getElementById("btnCreate");
 const btnHelp=document.getElementById("btnHelp");
+const progressInner=document.getElementById("progressInner");
+const progressText=document.getElementById("progressText");
 const shareLink=document.getElementById("shareLink");
 const congrats=document.getElementById("congrats");
 
 let timer=null;
 
-/* ===== 原抽奖逻辑保持 ===== */
-function playCarousel(finalKey){
-  let index=0,rounds=0;
-  const maxRounds=3,interval=1100;
-
-  circle.querySelectorAll(".prize-item,.prize-final").forEach(el=>el.remove());
-  clearInterval(timer);
-
+/* ⭐ 页面一加载就轮播 */
+function startCarousel(){
+  let index=0;
   timer=setInterval(()=>{
     const img=document.createElement("img");
     img.src=PRIZE_IMG[CAROUSEL[index]];
     img.className="prize-item";
     circle.appendChild(img);
     setTimeout(()=>img.remove(),3000);
+    index=(index+1)%CAROUSEL.length;
+  },1100);
+}
+startCarousel();
 
-    index++;
-    if(index>=CAROUSEL.length){index=0;rounds++;}
-    if(rounds>=maxRounds){
-      clearInterval(timer);
-      setTimeout(()=>{
-        const finalImg=document.createElement("img");
-        finalImg.src=PRIZE_IMG[finalKey];
-        finalImg.className="prize-final";
-        circle.appendChild(finalImg);
-      },1500);
-    }
-  },interval);
+/* 创建后停轮播 */
+function stopAndFinal(prizeKey){
+  clearInterval(timer);
+  circle.querySelectorAll(".prize-item").forEach(el=>el.remove());
+  const img=document.createElement("img");
+  img.src=PRIZE_IMG[prizeKey];
+  img.className="prize-final";
+  circle.appendChild(img);
 }
 
-function watch(activityId){
-  db.collection("activities").doc(activityId).onSnapshot(snap=>{
-    if(!snap.exists)return;
-    const p=snap.data().progress||0;
-    progressInner.style.width=p+"%";
-    progressText.innerText=p.toFixed(1)+"%";
-  });
-}
-
-/* ⭐ 页面加载：只处理“来自分享”的情况 */
-window.onload=()=>{
-  const params=new URLSearchParams(location.search);
-  const fromActivityId=params.get("from");
-  if(fromActivityId){
-    btnCreate.disabled=true;
-    btnCreate.innerText="好友助力中";
-    watch(fromActivityId);
-  }
-};
-
-/* ⭐ 自己点击发起助力 */
+/* 自己发起 */
 btnCreate.onclick=async()=>{
   btnCreate.disabled=true;
   const r=await fetch(CREATE_API,{
@@ -261,32 +220,40 @@ btnCreate.onclick=async()=>{
   const d=await r.json();
   if(!d.success)return;
 
-  playCarousel(d.prizeKey);
-  watch(d.activityId);
-  shareLink.innerText=
-    location.origin+location.pathname+"?from="+d.activityId;
-
+  stopAndFinal(d.prizeKey);
   congrats.innerText="🎉 恭喜获得 "+d.prizeKey+" 奖励";
   congrats.style.display="block";
+  shareLink.innerText=location.origin+location.pathname+"?from="+d.activityId;
+  watch(d.activityId);
 };
 
-/* ⭐ 帮助好友助力 */
-btnHelp.onclick=async()=>{
-  const params=new URLSearchParams(location.search);
-  const fromActivityId=params.get("from");
-  if(!fromActivityId)return;
+/* 监听进度 */
+function watch(id){
+  db.collection("activities").doc(id).onSnapshot(snap=>{
+    if(!snap.exists)return;
+    const p=snap.data().progress||0;
+    progressInner.style.width=p+"%";
+    progressText.innerText=p.toFixed(1)+"%";
+  });
+}
 
+/* 帮助好友 */
+const params=new URLSearchParams(location.search);
+const fromId=params.get("from");
+if(fromId){
+  btnCreate.disabled=true;
+  watch(fromId);
+}
+
+btnHelp.onclick=async()=>{
+  if(!fromId)return;
   const r=await fetch(HELP_API,{
     method:"POST",
     headers:{"x-device-id":deviceId},
-    body:JSON.stringify({activityId:fromActivityId})
+    body:JSON.stringify({activityId:fromId})
   });
   const d=await r.json();
-  if(!d.success){
-    alert(d.error||"已助力");
-    btnHelp.disabled=true;
-    return;
-  }
+  if(!d.success)return;
   btnHelp.disabled=true;
   btnHelp.innerText="已成功助力 🎉";
 };
@@ -294,6 +261,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
