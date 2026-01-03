@@ -22,24 +22,32 @@ body{
 .container{
   width:100%;
   max-width:420px;
-  padding:32px 20px 48px;
+  padding:28px 20px 48px;
 }
 
-/* ================= LOGO ================= */
-.logo-wrap{
-  display:flex;
-  justify-content:center;
-  margin-bottom:28px;
+/* ================= 品牌 ================= */
+.brand-center{
+  text-align:center;
+  margin-bottom:26px;
 }
-.logo{
-  width:150px;
+.brand-title{
+  font-size:30px;
+  font-weight:800;
+  color:#111;
+  letter-spacing:2px;
+}
+.brand-subtitle{
+  font-size:14px;
+  color:#999;
+  letter-spacing:4px;
+  margin-top:4px;
 }
 
 /* ================= 卡片 ================= */
 .card{
   background:#fff;
   border-radius:24px;
-  padding:36px 24px 32px;
+  padding:34px 24px 32px;
   box-shadow:0 24px 64px rgba(0,0,0,.08);
 }
 
@@ -48,10 +56,26 @@ body{
   position:relative;
   display:flex;
   justify-content:center;
-  margin:20px 0 18px;
+  margin:24px 0 18px;
 }
 
-/* iPhone 金光光晕 */
+/* 抽奖中状态 */
+.hero.waiting{
+  height:220px;
+  align-items:center;
+}
+.mystery{
+  font-size:18px;
+  color:#aaa;
+  letter-spacing:4px;
+  animation:blink 1.2s ease-in-out infinite;
+}
+@keyframes blink{
+  0%,100%{opacity:.4}
+  50%{opacity:1}
+}
+
+/* iPhone 金光 */
 .hero.glow::before{
   content:"";
   position:absolute;
@@ -67,7 +91,6 @@ body{
   filter:blur(6px);
   animation:glowPulse 2.8s ease-in-out infinite;
 }
-
 @keyframes glowPulse{
   0%{transform:scale(.95);opacity:.7}
   50%{transform:scale(1.05);opacity:1}
@@ -76,27 +99,19 @@ body{
 
 .hero-img{
   width:210px;
-  position:relative;
   z-index:1;
   filter:drop-shadow(0 24px 48px rgba(0,0,0,.25));
   animation:floatIn .6s ease;
 }
-
 @keyframes floatIn{
-  from{
-    opacity:0;
-    transform:translateY(24px) scale(.92);
-  }
-  to{
-    opacity:1;
-    transform:none;
-  }
+  from{opacity:0;transform:translateY(20px) scale(.9)}
+  to{opacity:1;transform:none}
 }
 
 /* ================= 文案 ================= */
 .hero-text{
   text-align:center;
-  margin-bottom:28px;
+  margin-bottom:26px;
 }
 .hero-sub{
   font-size:14px;
@@ -110,9 +125,7 @@ body{
 }
 
 /* ================= 进度 ================= */
-.progress-wrap{
-  margin:24px 0 18px;
-}
+.progress-wrap{margin:22px 0 16px;}
 .progress-bar{
   height:8px;
   background:#eee;
@@ -140,25 +153,17 @@ body{
   font-size:16px;
   margin-top:12px;
 }
-
 .primary{
   background:#E60023;
   color:#fff;
   font-weight:600;
 }
-
-.primary:active{
-  background:#C8001E;
-}
-
+.primary:active{background:#C8001E}
 .secondary{
   background:#fff5f7;
   color:#E60023;
 }
-
-.btn:disabled{
-  opacity:.5;
-}
+.btn:disabled{opacity:.5}
 
 /* ================= 链接 ================= */
 .link{
@@ -175,21 +180,23 @@ body{
 
 <div class="container">
 
-  <!-- LOGO -->
-  <div class="logo-wrap">
-    <img src="/logo.png" class="logo">
+  <!-- 品牌 -->
+  <div class="brand-center">
+    <div class="brand-title">联信资</div>
+    <div class="brand-subtitle">助力抽奖</div>
   </div>
 
   <div class="card">
 
     <!-- 主视觉 -->
-    <div class="hero" id="hero">
-      <img id="prizeImg" class="hero-img">
+    <div class="hero waiting" id="hero">
+      <div class="mystery" id="mysteryText">抽奖中…</div>
+      <img id="prizeImg" class="hero-img" style="display:none">
     </div>
 
     <!-- 文案 -->
     <div class="hero-text">
-      <div class="hero-sub">恭喜获得</div>
+      <div class="hero-sub" id="heroSub">请点击开始抽奖</div>
       <div class="hero-title" id="resultText">—</div>
     </div>
 
@@ -243,25 +250,44 @@ let deviceId = localStorage.deviceId || (localStorage.deviceId=genUUID());
 /* ================= DOM ================= */
 const hero = document.getElementById("hero");
 const prizeImg = document.getElementById("prizeImg");
+const mysteryText = document.getElementById("mysteryText");
+const heroSub = document.getElementById("heroSub");
 const resultText = document.getElementById("resultText");
 const progressInner = document.getElementById("progressInner");
 const progressText = document.getElementById("progressText");
 const btnCreate = document.getElementById("btnCreate");
 const btnHelp = document.getElementById("btnHelp");
 
-/* ================= 渲染奖品 ================= */
+/* ================= 抽奖过程 + 揭晓 ================= */
+function startDraw(prizeKey){
+  // 抽奖中
+  hero.className = "hero waiting";
+  mysteryText.style.display = "block";
+  prizeImg.style.display = "none";
+  heroSub.innerText = "正在抽取奖品…";
+  resultText.innerText = "—";
+
+  setTimeout(()=>{
+    renderPrize(prizeKey);
+  }, 1400); // ⭐ 抽奖感关键
+}
+
 function renderPrize(prizeKey){
-  hero.classList.remove("glow");
+  hero.className = "hero";
+  mysteryText.style.display = "none";
+  prizeImg.style.display = "block";
 
   if(prizeKey === "iphone"){
     prizeImg.src = "/iphone.png";
+    hero.classList.add("glow");
     resultText.innerText = "iPhone 17 Pro Max";
-    hero.classList.add("glow"); // ⭐ 专属金光
   }else{
     prizeImg.src = "/hongbao.png";
     resultText.innerText =
       PRIZES.find(p=>p.key===prizeKey)?.label || "";
   }
+
+  heroSub.innerText = "恭喜获得";
 }
 
 /* ================= 监听进度 ================= */
@@ -283,7 +309,7 @@ window.onload = async ()=>{
   });
   const d = await r.json();
   if(d.success && d.reused){
-    renderPrize(d.prizeKey);
+    startDraw(d.prizeKey);
     btnCreate.disabled=true;
     btnCreate.innerText="已发起助力";
     watch(d.activityId);
@@ -301,7 +327,7 @@ btnCreate.onclick = async ()=>{
   });
   const d = await r.json();
   if(!d.success) return;
-  renderPrize(d.prizeKey);
+  startDraw(d.prizeKey);
   watch(d.activityId);
   document.getElementById("shareLink").innerText =
     location.origin + location.pathname + "?from=" + d.activityId;
@@ -338,6 +364,7 @@ btnHelp.onclick = async ()=>{
 
 </body>
 </html>
+
 
 
 
