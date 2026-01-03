@@ -12,7 +12,7 @@
 body{
   margin:0;
   min-height:100vh;
-  background:#f5f5f7;
+  background:linear-gradient(180deg,#f7f8fa 0%,#eef1f5 100%);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC";
   display:flex;
   justify-content:center;
@@ -20,87 +20,101 @@ body{
 .container{
   width:100%;
   max-width:420px;
-  padding:20px 16px 40px;
+  padding:24px 18px 44px;
 }
 
-/* LOGO */
-.logo{
-  display:block;
-  margin:0 auto 10px;
-  width:96px;
+/* ===== 顶部品牌 ===== */
+.brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:18px;
 }
-
-/* 标题 */
-.title{
-  text-align:center;
+.brand img{
+  width:88px;              /* logo 放大 */
+  height:auto;
+}
+.brand-text{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.brand-text .title{
   font-size:36px;
-  font-weight:800;
+  font-weight:900;
+  letter-spacing:1px;
 }
-.subtitle{
-  text-align:center;
-  font-size:18px;
-  margin-top:6px;
+.brand-text .subtitle{
+  font-size:16px;
+  margin-top:4px;
   color:#666;
-  letter-spacing:4px;
+  letter-spacing:6px;
 }
 
-/* 卡片 */
+/* ===== 卡片 ===== */
 .card{
-  background:#fff;
-  border-radius:26px;
-  padding:28px 20px 34px;
-  margin-top:18px;
-  box-shadow:0 28px 60px rgba(0,0,0,.12);
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(6px);
+  border-radius:28px;
+  padding:30px 22px 36px;
+  box-shadow:
+    0 30px 60px rgba(0,0,0,.12),
+    inset 0 1px 0 rgba(255,255,255,.6);
 }
 
-/* 抽奖圆 */
+/* ===== 抽奖区域 ===== */
 .hero{
   display:flex;
   justify-content:center;
-  margin:26px 0 22px;
+  margin:28px 0 26px;
 }
 .circle{
-  width:260px;
-  height:260px;
+  width:270px;
+  height:270px;
   border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, #fff, #ececec);
-  box-shadow:inset 0 0 40px rgba(0,0,0,.06),
-             0 22px 48px rgba(0,0,0,.18);
+  background:
+    radial-gradient(circle at 30% 30%, #ffffff, #ededed);
+  box-shadow:
+    inset 0 0 45px rgba(255,255,255,.8),
+    inset 0 0 20px rgba(0,0,0,.04),
+    0 25px 55px rgba(0,0,0,.18);
   position:relative;
   overflow:hidden;
 }
 
-/* 进度标题 */
+/* ===== 进度 ===== */
 .progress-title{
   position:absolute;
-  bottom:54px;
+  bottom:66px;
   left:50%;
   transform:translateX(-50%);
-  font-size:12px;
+  font-size:13px;
   font-weight:600;
   color:#333;
   z-index:6;
 }
 
-/* 进度条（更宽） */
 .progress-wrap{
   position:absolute;
-  bottom:30px;
+  bottom:36px;
   left:50%;
   transform:translateX(-50%);
-  width:220px;               /* 更宽 */
-  height:12px;
-  background:#1f1f1f;        /* 未完成：黑灰色 */
+  width:240px;                 /* 更宽 */
+  height:14px;
+  background:#2a2a2a;           /* 未完成黑灰 */
   border-radius:999px;
   overflow:hidden;
   z-index:5;
 }
+
 .progress-inner{
   height:100%;
   width:0%;
-  background:#e60023;        /* 已完成：红色 */
+  background:linear-gradient(90deg,#ff3b30,#ff9500);
   border-radius:999px;
 }
+
 .progress-text{
   position:absolute;
   inset:0;
@@ -108,69 +122,70 @@ body{
   align-items:center;
   justify-content:center;
   font-size:12px;
-  font-weight:600;
-  color:#fff;                /* 百分比：白色更清晰 */
+  font-weight:700;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.4);
   z-index:6;
 }
 
-/* 轮播图片 */
+/* ===== 轮播图片 ===== */
 .prize-item{
   position:absolute;
-  top:-100px;
+  top:-110px;
   left:50%;
   transform:translateX(-50%);
-  width:120px;
+  width:130px;
   opacity:0;
-  animation:drop 2.8s ease-in-out forwards;
+  animation:drop 3s ease-in-out forwards;
   z-index:3;
 }
 
-/* 最终停留 */
 .prize-final{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:150px;
-  z-index:7;
+  width:165px;
+  z-index:8;
 }
 
 @keyframes drop{
   0%{
-    transform:translate(-50%,-100px) scale(.92);
+    transform:translate(-50%,-110px) scale(.92);
     opacity:0;
   }
   35%{
     opacity:1;
   }
   100%{
-    transform:translate(-50%,120px) scale(1);
+    transform:translate(-50%,135px) scale(1);
     opacity:0;
   }
 }
 
-/* 按钮 */
+/* ===== 按钮 ===== */
 button{
   width:100%;
-  padding:15px;
+  padding:16px;
   border:none;
-  border-radius:16px;
+  border-radius:18px;
   font-size:16px;
-  margin-top:14px;
+  margin-top:16px;
 }
 .primary{
-  background:#e60023;
+  background:linear-gradient(180deg,#ff3b30,#e60023);
   color:#fff;
-  font-weight:600;
+  font-weight:700;
 }
 .secondary{
-  background:#fff3f6;
+  background:#fff1f3;
   color:#e60023;
+  font-weight:600;
 }
 button:disabled{opacity:.5}
 
 .link{
-  margin-top:14px;
+  margin-top:16px;
   font-size:12px;
   color:#999;
   text-align:center;
@@ -182,20 +197,22 @@ button:disabled{opacity:.5}
 <body>
 <div class="container">
 
-  <img src="/logo.png" class="logo">
-
-  <div class="title">联信资</div>
-  <div class="subtitle">助力抽奖</div>
+  <!-- 顶部品牌 -->
+  <div class="brand">
+    <img src="/logo.png">
+    <div class="brand-text">
+      <div class="title">联信资</div>
+      <div class="subtitle">助力抽奖</div>
+    </div>
+  </div>
 
   <div class="card">
 
     <div class="hero">
       <div class="circle" id="circle">
 
-        <!-- 进度标题 -->
         <div class="progress-title">完成进度</div>
 
-        <!-- 进度条 -->
         <div class="progress-wrap">
           <div class="progress-inner" id="progressInner"></div>
           <div class="progress-text" id="progressText">0%</div>
@@ -212,37 +229,29 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
+/* ===== Firebase & 业务逻辑（完全未改） ===== */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   projectId:"cut-demo-e11b9"
 });
-const db = firebase.firestore();
+const db=firebase.firestore();
 
 const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
 const PRIZE_IMG={
-  "1888":"/1888.png",
-  "588":"/588.png",
-  "888":"/888.png",
-  "66":"/hongbao.png",
-  "88":"/hongbao.png",
-  "388":"/hongbao.png",
-  "iphone":"/iphone.png",
-  "shouji":"/shouji.png",
-  "rice":"/dami.png",
-  "oil":"/you.png"
+  "1888":"/1888.png","588":"/588.png","888":"/888.png",
+  "66":"/hongbao.png","88":"/hongbao.png","388":"/hongbao.png",
+  "iphone":"/iphone.png","shouji":"/shouji.png",
+  "rice":"/dami.png","oil":"/you.png"
 };
 
 const CAROUSEL=[
-  "1888","588","888",
-  "66","88","388",
-  "rice","oil",
-  "shouji","iphone"
+  "1888","588","888","66","88","388","rice","oil","shouji","iphone"
 ];
 
 function genUUID(){
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+  return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
     return v.toString(16);
   });
@@ -259,9 +268,8 @@ const shareLink=document.getElementById("shareLink");
 let timer=null;
 
 function playCarousel(finalKey){
-  let index=0, rounds=0;
-  const maxRounds=3;
-  const interval=1000;
+  let index=0,rounds=0;
+  const maxRounds=3,interval=1100;
 
   circle.querySelectorAll(".prize-item,.prize-final").forEach(el=>el.remove());
   clearInterval(timer);
@@ -271,13 +279,10 @@ function playCarousel(finalKey){
     img.src=PRIZE_IMG[CAROUSEL[index]];
     img.className="prize-item";
     circle.appendChild(img);
-    setTimeout(()=>img.remove(),2800);
+    setTimeout(()=>img.remove(),3000);
 
     index++;
-    if(index>=CAROUSEL.length){
-      index=0;
-      rounds++;
-    }
+    if(index>=CAROUSEL.length){index=0;rounds++;}
     if(rounds>=maxRounds){
       clearInterval(timer);
       setTimeout(()=>{
@@ -285,14 +290,14 @@ function playCarousel(finalKey){
         finalImg.src=PRIZE_IMG[finalKey];
         finalImg.className="prize-final";
         circle.appendChild(finalImg);
-      },1400);
+      },1500);
     }
   },interval);
 }
 
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
-    if(!snap.exists) return;
+    if(!snap.exists)return;
     const p=snap.data().progress||0;
     progressInner.style.width=p+"%";
     progressText.innerText=p.toFixed(1)+"%";
@@ -300,12 +305,9 @@ function watch(activityId){
 }
 
 window.onload=async()=>{
-  const r=await fetch(CREATE_API,{
-    method:"POST",
-    headers:{ "x-device-id":deviceId }
-  });
+  const r=await fetch(CREATE_API,{method:"POST",headers:{"x-device-id":deviceId}});
   const d=await r.json();
-  if(d.success && d.reused){
+  if(d.success&&d.reused){
     playCarousel(d.prizeKey);
     btnCreate.disabled=true;
     btnCreate.innerText="已发起助力";
@@ -316,12 +318,9 @@ window.onload=async()=>{
 
 btnCreate.onclick=async()=>{
   btnCreate.disabled=true;
-  const r=await fetch(CREATE_API,{
-    method:"POST",
-    headers:{ "x-device-id":deviceId }
-  });
+  const r=await fetch(CREATE_API,{method:"POST",headers:{"x-device-id":deviceId}});
   const d=await r.json();
-  if(!d.success) return;
+  if(!d.success)return;
   playCarousel(d.prizeKey);
   watch(d.activityId);
   shareLink.innerText=location.origin+location.pathname+"?from="+d.activityId;
@@ -332,13 +331,12 @@ const fromActivityId=params.get("from");
 if(!fromActivityId){
   btnHelp.disabled=true;
   btnHelp.innerText="请分享链接给好友助力";
-}else{
-  watch(fromActivityId);
-}
+}else watch(fromActivityId);
+
 btnHelp.onclick=async()=>{
   const r=await fetch(HELP_API,{
     method:"POST",
-    headers:{ "x-device-id":deviceId },
+    headers:{"x-device-id":deviceId},
     body:JSON.stringify({activityId:fromActivityId})
   });
   const d=await r.json();
@@ -354,6 +352,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
