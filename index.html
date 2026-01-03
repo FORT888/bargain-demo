@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>联信资 · 助力抽奖</title>
+<title>联信资助力抽奖</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -12,7 +12,7 @@
 body{
   margin:0;
   min-height:100vh;
-  background:#f7f7f7;
+  background:#f6f6f6;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC";
   display:flex;
   justify-content:center;
@@ -23,21 +23,25 @@ body{
   padding:24px 16px 40px;
 }
 
-/* 品牌 */
-.brand{
-  text-align:center;
-  margin-bottom:18px;
+/* logo */
+.logo{
+  display:block;
+  margin:0 auto 10px;
+  width:70px;
 }
-.brand h1{
-  margin:0;
-  font-size:30px;
+
+/* 标题 */
+.title{
+  text-align:center;
+  font-size:34px; /* 放大两个字号 */
   font-weight:800;
   letter-spacing:2px;
 }
-.brand p{
+.subtitle{
+  text-align:center;
+  font-size:18px;
   margin-top:6px;
-  font-size:14px;
-  color:#999;
+  color:#666;
   letter-spacing:4px;
 }
 
@@ -45,69 +49,58 @@ body{
 .card{
   background:#fff;
   border-radius:22px;
-  padding:28px 20px 26px;
+  padding:26px 20px 28px;
+  margin-top:20px;
   box-shadow:0 20px 50px rgba(0,0,0,.1);
 }
 
-/* 扭蛋机 */
+/* 中央扭蛋 */
 .hero{
+  position:relative;
   display:flex;
   justify-content:center;
-  margin:20px 0 12px;
+  margin:20px 0 16px;
 }
-.gacha{
-  width:200px;
-  height:200px;
+.circle{
+  width:220px;
+  height:220px;
   border-radius:50%;
   background:radial-gradient(circle at 30% 30%, #fff, #eaeaea);
   box-shadow:0 16px 36px rgba(0,0,0,.18);
   display:flex;
   align-items:center;
   justify-content:center;
-}
-.gacha::after{
-  content:"";
-  width:110px;
-  height:110px;
-  border-radius:50%;
-  background:linear-gradient(#e60023,#c8001e);
-}
-.gacha.spin{
-  animation:shake .8s ease;
-}
-@keyframes shake{
-  0%{transform:rotate(0)}
-  25%{transform:rotate(-6deg)}
-  50%{transform:rotate(6deg)}
-  75%{transform:rotate(-4deg)}
-  100%{transform:rotate(0)}
+  position:relative;
 }
 
-/* 结果 */
-.result{
-  text-align:center;
-  font-size:18px;
-  font-weight:700;
-  margin:10px 0 14px;
-}
-
-/* 进度 */
-.progress-bar{
-  height:8px;
-  background:#eee;
+/* 圆内进度条 */
+.circle-progress{
+  position:absolute;
+  bottom:20px;
+  width:140px;
+  height:6px;
+  background:#ddd;
   border-radius:999px;
   overflow:hidden;
 }
-.progress-inner{
+.circle-progress-inner{
   height:100%;
   width:0%;
   background:#e60023;
 }
-.progress-text{
-  font-size:12px;
-  color:#999;
-  text-align:center;
-  margin-top:6px;
+
+/* 奖品图片飘落 */
+.prize-float{
+  position:absolute;
+  top:-40px;
+  width:80px;
+  opacity:0;
+  animation:floatDown 1.2s ease forwards;
+}
+@keyframes floatDown{
+  0%{transform:translateY(-40px);opacity:0}
+  30%{opacity:1}
+  100%{transform:translateY(40px);opacity:0}
 }
 
 /* 按钮 */
@@ -134,8 +127,8 @@ button:disabled{opacity:.5}
   margin-top:12px;
   font-size:12px;
   color:#999;
-  word-break:break-all;
   text-align:center;
+  word-break:break-all;
 }
 </style>
 </head>
@@ -143,27 +136,25 @@ button:disabled{opacity:.5}
 <body>
 <div class="container">
 
-  <div class="brand">
-    <h1>联信资</h1>
-    <p>助力抽奖</p>
-  </div>
+  <!-- logo -->
+  <img src="/images/logo.png" class="logo">
+
+  <!-- 标题 -->
+  <div class="title">联信资</div>
+  <div class="subtitle">助力抽奖</div>
 
   <div class="card">
 
-    <!-- 扭蛋机 -->
+    <!-- 中央圆 -->
     <div class="hero">
-      <div class="gacha" id="gacha"></div>
+      <div class="circle" id="circle">
+        <div class="circle-progress">
+          <div class="circle-progress-inner" id="progressInner"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="result" id="resultText">点击开始抽奖</div>
-
-    <!-- 进度 -->
-    <div class="progress-bar">
-      <div class="progress-inner" id="progressInner"></div>
-    </div>
-    <div class="progress-text" id="progressText">完成进度 0%</div>
-
-    <!-- 你的两个按钮（完整保留） -->
+    <!-- 按钮（完整保留） -->
     <button id="btnHelp" class="secondary">帮助好友助力</button>
     <button id="btnCreate" class="primary">发起助力试试</button>
 
@@ -172,7 +163,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ================= Firebase ================= */
+/* Firebase */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   projectId:"cut-demo-e11b9"
@@ -182,20 +173,20 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= 奖品映射（严格） ================= */
-const PRIZE_MAP = {
-  "66":"红包 66 元",
-  "88":"红包 88 元",
-  "388":"红包 388 元",
-  "588":"红包 588 元",
-  "888":"红包 888 元",
-  "1888":"红包 1888 元",
-  "iphone":"苹果 17 Pro Max",
-  "rice":"大米一袋",
-  "oil":"食用油一桶"
+/* 奖品映射（严格） */
+const PRIZE_IMG = {
+  "1888":"/images/1888.png",
+  "588":"/images/588.png",
+  "888":"/images/888.png",
+  "66":"/images/hongbao.png",
+  "88":"/images/hongbao.png",
+  "388":"/images/hongbao.png",
+  "iphone":"/images/ipjpne.png",
+  "rice":"/images/dami.png",
+  "oil":"/images/you.png"
 };
 
-/* ================= deviceId ================= */
+/* deviceId */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -204,89 +195,81 @@ function genUUID(){
 }
 let deviceId = localStorage.deviceId || (localStorage.deviceId=genUUID());
 
-/* ================= DOM ================= */
-const gacha = document.getElementById("gacha");
-const resultText = document.getElementById("resultText");
+const circle = document.getElementById("circle");
+const progressInner = document.getElementById("progressInner");
 const btnCreate = document.getElementById("btnCreate");
 const btnHelp = document.getElementById("btnHelp");
 
-/* ================= 扭蛋演绎（不随机） ================= */
-function playGacha(prizeKey){
-  const label = PRIZE_MAP[prizeKey] || "";
-  gacha.classList.add("spin");
-  resultText.innerText = "抽奖中…";
+/* 飘落动画 */
+function showPrize(prizeKey){
+  const img = document.createElement("img");
+  img.src = PRIZE_IMG[prizeKey] || "/images/hongbao.png";
+  img.className = "prize-float";
+  circle.appendChild(img);
 
-  setTimeout(()=>{
-    gacha.classList.remove("spin");
-    resultText.innerText = "🎉 恭喜获得：" + label;
-  },800);
+  setTimeout(()=>circle.removeChild(img),1300);
 }
 
-/* ================= 监听进度 ================= */
+/* 监听进度 */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
-    const d = snap.data();
-    document.getElementById("progressInner").style.width = (d.progress||0)+"%";
-    document.getElementById("progressText").innerText =
-      "完成进度 "+(d.progress||0).toFixed(1)+"%";
+    const d=snap.data();
+    progressInner.style.width = (d.progress||0)+"%";
   });
 }
 
-/* ================= 页面加载（复用活动） ================= */
+/* 页面加载复用 */
 window.onload = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
-    headers:{ "x-device-id": deviceId }
+    headers:{ "x-device-id":deviceId }
   });
   const d = await r.json();
-
   if(d.success && d.reused){
-    playGacha(d.prizeKey);
+    showPrize(d.prizeKey);
     btnCreate.disabled=true;
     btnCreate.innerText="已发起助力";
     watch(d.activityId);
-    document.getElementById("shareLink").innerText =
+    shareLink.innerText =
       location.origin+location.pathname+"?from="+d.activityId;
   }
 };
 
-/* ================= 发起助力 ================= */
+/* 发起助力 */
 btnCreate.onclick = async ()=>{
   btnCreate.disabled=true;
   const r = await fetch(CREATE_API,{
     method:"POST",
-    headers:{ "x-device-id": deviceId }
+    headers:{ "x-device-id":deviceId }
   });
   const d = await r.json();
   if(!d.success) return;
 
-  playGacha(d.prizeKey);
+  showPrize(d.prizeKey);
   watch(d.activityId);
-  document.getElementById("shareLink").innerText =
+  shareLink.innerText =
     location.origin+location.pathname+"?from="+d.activityId;
 };
 
-/* ================= 帮朋友助力 ================= */
-const params = new URLSearchParams(location.search);
-const fromActivityId = params.get("from");
-
+/* 帮助好友助力 */
+const params=new URLSearchParams(location.search);
+const fromActivityId=params.get("from");
 if(!fromActivityId){
   btnHelp.disabled=true;
   btnHelp.innerText="请分享链接给好友助力";
 }else{
   watch(fromActivityId);
 }
-
-btnHelp.onclick = async ()=>{
-  const r = await fetch(HELP_API,{
+btnHelp.onclick=async()=>{
+  const r=await fetch(HELP_API,{
     method:"POST",
-    headers:{ "x-device-id": deviceId },
-    body:JSON.stringify({ activityId: fromActivityId })
+    headers:{ "x-device-id":deviceId },
+    body:JSON.stringify({activityId:fromActivityId})
   });
-  const d = await r.json();
+  const d=await r.json();
   if(!d.success){
-    alert(d.error||"你已经助过力了");
+    alert(d.error||"已助力");
     btnHelp.disabled=true;
     return;
   }
@@ -297,5 +280,6 @@ btnHelp.onclick = async ()=>{
 
 </body>
 </html>
+
 
 
