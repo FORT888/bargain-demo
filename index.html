@@ -110,7 +110,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ========= UUID ========= */
+/* ================= 工具 ================= */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -118,7 +118,48 @@ function genUUID(){
   });
 }
 
-/* ========= Firebase ========= */
+/* ================= Canvas + Audio 指纹 ================= */
+async function getFingerprint(){
+  // Canvas
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.font = "14px Arial";
+  ctx.fillText("fp", 2, 2);
+  const canvasFp = canvas.toDataURL();
+
+  // Audio
+  let audioFp = "";
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ac.createOscillator();
+    const analyser = ac.createAnalyser();
+    osc.connect(analyser);
+    analyser.connect(ac.destination);
+    osc.start(0);
+    const buf = new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatFrequencyData(buf);
+    audioFp = buf.slice(0, 30).join(",");
+    osc.stop();
+    ac.close();
+  }catch(e){}
+
+  const env = [
+    navigator.userAgent,
+    screen.width,
+    screen.height,
+    navigator.language
+  ].join("|");
+
+  const raw = canvasFp + "|" + audioFp + "|" + env;
+  let hash = 0;
+  for(let i=0;i<raw.length;i++){
+    hash = (hash<<5)-hash+raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return "fp_" + Math.abs(hash);
+}
+
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -126,37 +167,37 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ========= API ========= */
+/* ================= API ================= */
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app/createActivity";
 const HELP_API   = "https://createactivity-23p22ouguq-uc.a.run.app/helpActivity";
 
-/* ========= deviceId ========= */
+/* ================= 设备 & 指纹 ================= */
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
   localStorage.setItem("deviceId", deviceId);
 }
 
-/* ========= URL ========= */
+let fingerprint = "";
+(async ()=>{ fingerprint = await getFingerprint(); })();
+
+/* ================= URL ================= */
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
-/* ========= DOM ========= */
+/* ================= DOM ================= */
 const btnHelp = document.getElementById("btnHelp");
 const btnCreate = document.getElementById("btnCreate");
+const progressInner = document.getElementById("progressInner");
+const progressText = document.getElementById("progressText");
 
-/* ========= 页面身份判断 ========= */
-if (fromActivityId && fromActivityId.length > 5) {
-  // 好友助力页
-  btnCreate.disabled = true;
-  btnCreate.innerText = "当前为好友助力页面";
-} else {
-  // 发起者页
+/* ================= 页面规则 ================= */
+if(!fromActivityId){
   btnHelp.disabled = true;
   btnHelp.innerText = "请分享链接给好友助力";
 }
 
-/* ========= 转盘 ========= */
+/* ================= 转盘绘制 ================= */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -172,7 +213,6 @@ const PRIZES = [
 ];
 
 const STEP = 2*Math.PI / PRIZES.length;
-
 PRIZES.forEach((p,i)=>{
   ctx.beginPath();
   ctx.moveTo(R,R);
@@ -192,48 +232,43 @@ PRIZES.forEach((p,i)=>{
 let angle = 0;
 function spinTo(prizeKey){
   const idx = PRIZES.findIndex(p=>p.key===prizeKey);
-  if(idx<0) return;
   angle += 1440 + idx*(360/PRIZES.length);
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ========= Firestore 监听 ========= */
+/* ================= Firestore 监听 ================= */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
     const d = snap.data();
-    document.getElementById("progressInner").style.width = d.progress + "%";
-    document.getElementById("progressText").innerText = "完成进度 " + d.progress.toFixed(1) + "%";
+    progressInner.style.width = d.progress + "%";
+    progressText.innerText = "完成进度 " + d.progress.toFixed(1) + "%";
     const prize = PRIZES.find(p=>p.key===d.prizeKey);
     if(prize) document.getElementById("prizeText").innerText = prize.label;
   });
 }
 
-/* ========= 发起 ========= */
+/* ================= 发起 ================= */
 btnCreate.onclick = async ()=>{
-  if(btnCreate.disabled) return;
-
   const r = await fetch(CREATE_API,{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-device-id": deviceId
+      "x-device-id": deviceId,
+      "x-fingerprint": fingerprint
     }
   });
   const d = await r.json();
-  if(!d.success){
-    alert(d.error || "创建失败");
-    return;
-  }
+  if(!d.success){ alert(d.error||"创建失败"); return; }
 
   spinTo(d.prizeKey);
   watch(d.activityId);
 
   document.getElementById("shareLink").innerText =
-    location.origin + "?from=" + d.activityId;
+    "我的助力链接：" + location.origin + "?from=" + d.activityId;
 };
 
-/* ========= 助力 ========= */
+/* ================= 助力 ================= */
 btnHelp.onclick = async ()=>{
   if(btnHelp.disabled) return;
 
@@ -241,30 +276,36 @@ btnHelp.onclick = async ()=>{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-device-id": deviceId
+      "x-device-id": deviceId,
+      "x-fingerprint": fingerprint
     },
     body: JSON.stringify({ activityId: fromActivityId })
   });
-
   const d = await r.json();
+
   if(!d.success){
-    alert(d.error || "你已经助过力了");
+    alert(d.error||"已助力");
     btnHelp.disabled = true;
+    btnHelp.innerText = "已助力";
     return;
   }
+
+  progressInner.style.width = d.progress + "%";
+  progressText.innerText = "完成进度 " + d.progress.toFixed(1) + "%";
 
   btnHelp.disabled = true;
   btnHelp.innerText = "已成功助力 🎉";
 };
 
-/* ========= 好友页监听 ========= */
-if(fromActivityId && fromActivityId.length > 5){
+/* ================= 好友页监听 ================= */
+if(fromActivityId){
   watch(fromActivityId);
 }
 </script>
 
 </body>
 </html>
+
 
 
 
