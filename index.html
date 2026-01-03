@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>联信资 · 助力转盘</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -22,38 +23,12 @@ body{
   width:92%;
   max-width:420px;
   background:#fff;
-  border-radius:24px;
+  border-radius:22px;
   padding:20px;
   text-align:center;
   box-shadow:0 20px 60px rgba(0,0,0,.15);
 }
-h1{margin:8px 0}
-.prize-box{font-weight:700;margin-bottom:10px}
-.prize-box span{color:#dc2626}
-
-.wheel-wrap{
-  position:relative;
-  width:300px;
-  height:300px;
-  margin:0 auto;
-}
-#wheel{
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  transition:transform 3.6s cubic-bezier(.25,.9,.25,1);
-}
-.center-logo{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  pointer-events:none;
-}
-
+h2{margin:8px 0}
 .progress-bar{
   height:14px;
   background:#fde68a;
@@ -66,7 +41,6 @@ h1{margin:8px 0}
   background:linear-gradient(90deg,#ef4444,#f59e0b);
 }
 .progress-text{font-size:13px;margin-top:6px}
-
 button{
   width:100%;
   margin-top:10px;
@@ -78,25 +52,14 @@ button{
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
 button:disabled{opacity:.5}
-
-.link{
-  font-size:12px;
-  margin-top:8px;
-  word-break:break-all;
-}
+.link{font-size:12px;margin-top:8px;word-break:break-all}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h1>联信资 · 助力转盘</h1>
-  <div class="prize-box">奖品：<span id="prizeText">未确定</span></div>
-
-  <div class="wheel-wrap">
-    <canvas id="wheel" width="600" height="600"></canvas>
-    <img src="logo.png" class="center-logo">
-  </div>
+  <h2>联信资 · 助力活动</h2>
 
   <div class="progress-bar">
     <div class="progress-inner" id="progressInner"></div>
@@ -110,7 +73,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ================= 工具 ================= */
+/* ==================== 工具 ==================== */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -118,48 +81,26 @@ function genUUID(){
   });
 }
 
-/* ================= Canvas + Audio 指纹 ================= */
+/* ==================== 安全指纹（不会报错） ==================== */
 async function getFingerprint(){
-  // Canvas
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  ctx.font = "14px Arial";
-  ctx.fillText("fp", 2, 2);
-  const canvasFp = canvas.toDataURL();
-
-  // Audio
-  let audioFp = "";
   try{
-    const ac = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ac.createOscillator();
-    const analyser = ac.createAnalyser();
-    osc.connect(analyser);
-    analyser.connect(ac.destination);
-    osc.start(0);
-    const buf = new Float32Array(analyser.frequencyBinCount);
-    analyser.getFloatFrequencyData(buf);
-    audioFp = buf.slice(0, 30).join(",");
-    osc.stop();
-    ac.close();
-  }catch(e){}
-
-  const env = [
-    navigator.userAgent,
-    screen.width,
-    screen.height,
-    navigator.language
-  ].join("|");
-
-  const raw = canvasFp + "|" + audioFp + "|" + env;
-  let hash = 0;
-  for(let i=0;i<raw.length;i++){
-    hash = (hash<<5)-hash+raw.charCodeAt(i);
-    hash |= 0;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.font="14px Arial";
+    ctx.fillText("fp",2,2);
+    const raw = canvas.toDataURL() + navigator.userAgent;
+    let h=0;
+    for(let i=0;i<raw.length;i++){
+      h=(h<<5)-h+raw.charCodeAt(i);
+      h|=0;
+    }
+    return "fp_"+Math.abs(h);
+  }catch(e){
+    return "";
   }
-  return "fp_" + Math.abs(hash);
 }
 
-/* ================= Firebase ================= */
+/* ==================== Firebase ==================== */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -167,108 +108,73 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ================= API ================= */
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app/createActivity";
-const HELP_API   = "https://createactivity-23p22ouguq-uc.a.run.app/helpActivity";
+/* ==================== 后端接口（你的真实 URL） ==================== */
+const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= 设备 & 指纹 ================= */
+/* ==================== 设备 & 指纹 ==================== */
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
   localStorage.setItem("deviceId", deviceId);
 }
-
 let fingerprint = "";
-(async ()=>{ fingerprint = await getFingerprint(); })();
+(async()=>{ fingerprint = await getFingerprint(); })();
 
-/* ================= URL ================= */
+/* ==================== URL 参数 ==================== */
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
-/* ================= DOM ================= */
+/* ==================== DOM ==================== */
 const btnHelp = document.getElementById("btnHelp");
 const btnCreate = document.getElementById("btnCreate");
 const progressInner = document.getElementById("progressInner");
 const progressText = document.getElementById("progressText");
+const shareLink = document.getElementById("shareLink");
 
-/* ================= 页面规则 ================= */
+/* ==================== 页面规则 ==================== */
 if(!fromActivityId){
   btnHelp.disabled = true;
   btnHelp.innerText = "请分享链接给好友助力";
 }
 
-/* ================= 转盘绘制 ================= */
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-const R = 300;
-
-const PRIZES = [
-  {key:"66",label:"66元"},
-  {key:"88",label:"88元"},
-  {key:"388",label:"388元"},
-  {key:"588",label:"588元"},
-  {key:"888",label:"888元"},
-  {key:"1888",label:"1888元"},
-  {key:"iphone",label:"iPhone"}
-];
-
-const STEP = 2*Math.PI / PRIZES.length;
-PRIZES.forEach((p,i)=>{
-  ctx.beginPath();
-  ctx.moveTo(R,R);
-  ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
-  ctx.fillStyle = `hsl(${i*40},80%,70%)`;
-  ctx.fill();
-  ctx.save();
-  ctx.translate(R,R);
-  ctx.rotate(i*STEP+STEP/2);
-  ctx.textAlign="right";
-  ctx.font="bold 22px PingFang SC";
-  ctx.fillStyle="#7c2d12";
-  ctx.fillText(p.label,R-30,8);
-  ctx.restore();
-});
-
-let angle = 0;
-function spinTo(prizeKey){
-  const idx = PRIZES.findIndex(p=>p.key===prizeKey);
-  angle += 1440 + idx*(360/PRIZES.length);
-  canvas.style.transform = `rotate(${angle}deg)`;
-}
-
-/* ================= Firestore 监听 ================= */
+/* ==================== Firestore 监听 ==================== */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
     const d = snap.data();
-    progressInner.style.width = d.progress + "%";
-    progressText.innerText = "完成进度 " + d.progress.toFixed(1) + "%";
-    const prize = PRIZES.find(p=>p.key===d.prizeKey);
-    if(prize) document.getElementById("prizeText").innerText = prize.label;
+    const p = Number(d.progress || 0);
+    progressInner.style.width = p + "%";
+    progressText.innerText = "完成进度 " + p.toFixed(1) + "%";
   });
 }
+if(fromActivityId){
+  watch(fromActivityId);
+}
 
-/* ================= 发起 ================= */
+/* ==================== 发起助力 ==================== */
 btnCreate.onclick = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-device-id": deviceId,
-      "x-fingerprint": fingerprint
+      "x-device-id":deviceId,
+      "x-fingerprint":fingerprint
     }
   });
   const d = await r.json();
-  if(!d.success){ alert(d.error||"创建失败"); return; }
+  if(!d.success){
+    alert(d.error || "创建失败");
+    return;
+  }
 
-  spinTo(d.prizeKey);
+  shareLink.innerText =
+    "我的助力链接：" + location.origin + location.pathname + "?from=" + d.activityId;
+
   watch(d.activityId);
-
-  document.getElementById("shareLink").innerText =
-    "我的助力链接：" + location.origin + "?from=" + d.activityId;
 };
 
-/* ================= 助力 ================= */
+/* ==================== 帮助好友助力 ==================== */
 btnHelp.onclick = async ()=>{
   if(btnHelp.disabled) return;
 
@@ -276,35 +182,33 @@ btnHelp.onclick = async ()=>{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-device-id": deviceId,
-      "x-fingerprint": fingerprint
+      "x-device-id":deviceId,
+      "x-fingerprint":fingerprint
     },
-    body: JSON.stringify({ activityId: fromActivityId })
+    body:JSON.stringify({ activityId: fromActivityId })
   });
+
   const d = await r.json();
 
   if(!d.success){
-    alert(d.error||"已助力");
+    alert(d.error || "你已经助过力了");
     btnHelp.disabled = true;
     btnHelp.innerText = "已助力";
     return;
   }
 
-  progressInner.style.width = d.progress + "%";
-  progressText.innerText = "完成进度 " + d.progress.toFixed(1) + "%";
+  const p = Number(d.progress || 0);
+  progressInner.style.width = p + "%";
+  progressText.innerText = "完成进度 " + p.toFixed(1) + "%";
 
   btnHelp.disabled = true;
   btnHelp.innerText = "已成功助力 🎉";
 };
-
-/* ================= 好友页监听 ================= */
-if(fromActivityId){
-  watch(fromActivityId);
-}
 </script>
 
 </body>
 </html>
+
 
 
 
