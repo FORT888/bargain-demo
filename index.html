@@ -39,29 +39,42 @@ h1{margin:8px 0}
   margin:0 auto;
 }
 
-/* 指针 */
+/* 指针（完整：箭头 + 竖线，完全在轮盘内） */
 .pointer{
   position:absolute;
-  top:-6px;
+  top:12px;                 /* 确保不超出轮盘 */
   left:50%;
   transform:translateX(-50%);
+  width:20px;
+  height:46px;              /* 指针总高度 */
+  z-index:10;
+  pointer-events:none;
+}
+.pointer-head{
   width:0;
   height:0;
-  border-left:16px solid transparent;
-  border-right:16px solid transparent;
-  border-bottom:28px solid #ef4444;
-  z-index:10;
+  margin:0 auto;
+  border-left:7px solid transparent;
+  border-right:7px solid transparent;
+  border-bottom:12px solid #ef4444;
+}
+.pointer-line{
+  width:2px;
+  height:28px;
+  background:#ef4444;
+  margin:0 auto;
+  border-radius:1px;
 }
 
 /* 指针弹动动画 */
 @keyframes pointerBounce {
   0%   { transform:translateX(-50%) translateY(0); }
-  40%  { transform:translateX(-50%) translateY(6px); }
-  70%  { transform:translateX(-50%) translateY(-3px); }
+  40%  { transform:translateX(-50%) translateY(5px); }
+  70%  { transform:translateX(-50%) translateY(-2px); }
   100% { transform:translateX(-50%) translateY(0); }
 }
 .pointer.bounce{
-  animation:pointerBounce .4s ease-out;
+  animation:pointerBounce .35s ease-out;
 }
 
 /* 转盘 */
@@ -127,7 +140,10 @@ button:disabled{opacity:.5}
 
   <div class="wheel-wrap">
     <!-- 指针 -->
-    <div class="pointer" id="pointer"></div>
+    <div class="pointer" id="pointer">
+      <div class="pointer-head"></div>
+      <div class="pointer-line"></div>
+    </div>
 
     <!-- 转盘 -->
     <canvas id="wheel" width="600" height="600"></canvas>
@@ -148,7 +164,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ================= 工具 ================= */
+/* ========= UUID ========= */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -156,7 +172,7 @@ function genUUID(){
   });
 }
 
-/* ================= Firebase ================= */
+/* ========= Firebase ========= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -164,22 +180,22 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ================= API ================= */
+/* ========= API（你的 Cloud Run URL） ========= */
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= deviceId ================= */
+/* ========= deviceId ========= */
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
   localStorage.setItem("deviceId", deviceId);
 }
 
-/* ================= URL ================= */
+/* ========= URL ========= */
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
-/* ================= DOM ================= */
+/* ========= DOM ========= */
 const btnHelp = document.getElementById("btnHelp");
 const btnCreate = document.getElementById("btnCreate");
 const pointer = document.getElementById("pointer");
@@ -189,7 +205,7 @@ if(!fromActivityId){
   btnHelp.innerText = "请分享链接给好友助力";
 }
 
-/* ================= 转盘绘制 ================= */
+/* ========= 转盘绘制 ========= */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -223,7 +239,7 @@ PRIZES.forEach((p,i)=>{
   ctx.restore();
 });
 
-/* ================= 精准转盘 ================= */
+/* ========= 精准旋转 ========= */
 function spinTo(prizeKey){
   const idx = PRIZES.findIndex(p=>p.key===prizeKey);
   if(idx<0) return;
@@ -231,7 +247,7 @@ function spinTo(prizeKey){
   const per = 360 / PRIZES.length;
   const angle = 360*4 + (360 - (idx*per + per/2));
 
-  // 指针开始弹
+  // 指针弹动
   pointer.classList.remove("bounce");
   void pointer.offsetWidth;
   pointer.classList.add("bounce");
@@ -239,7 +255,7 @@ function spinTo(prizeKey){
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ================= Firestore 监听 ================= */
+/* ========= Firestore 监听 ========= */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
@@ -252,7 +268,7 @@ function watch(activityId){
   });
 }
 
-/* ================= 发起 ================= */
+/* ========= 发起 ========= */
 btnCreate.onclick = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
@@ -271,7 +287,7 @@ btnCreate.onclick = async ()=>{
     location.origin + location.pathname + "?from=" + d.activityId;
 };
 
-/* ================= 助力 ================= */
+/* ========= 助力 ========= */
 btnHelp.onclick = async ()=>{
   if(btnHelp.disabled) return;
 
@@ -303,6 +319,7 @@ if(fromActivityId){
 
 </body>
 </html>
+
 
 
 
