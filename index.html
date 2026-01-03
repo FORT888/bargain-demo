@@ -33,7 +33,7 @@ body{
 /* 标题 */
 .title{
   text-align:center;
-  font-size:34px; /* 放大两个字号 */
+  font-size:34px;
   font-weight:800;
   letter-spacing:2px;
 }
@@ -54,7 +54,7 @@ body{
   box-shadow:0 20px 50px rgba(0,0,0,.1);
 }
 
-/* 中央扭蛋 */
+/* 中央圆 */
 .hero{
   position:relative;
   display:flex;
@@ -89,7 +89,7 @@ body{
   background:#e60023;
 }
 
-/* 奖品图片飘落 */
+/* 奖品飘落 */
 .prize-float{
   position:absolute;
   top:-40px;
@@ -137,7 +137,7 @@ button:disabled{opacity:.5}
 <div class="container">
 
   <!-- logo -->
-  <img src="/images/logo.png" class="logo">
+  <img src="/logo.png" class="logo">
 
   <!-- 标题 -->
   <div class="title">联信资</div>
@@ -173,17 +173,20 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* 奖品映射（严格） */
+/* 奖品图片映射（按你真实文件） */
 const PRIZE_IMG = {
-  "1888":"/images/1888.png",
-  "588":"/images/588.png",
-  "888":"/images/888.png",
-  "66":"/images/hongbao.png",
-  "88":"/images/hongbao.png",
-  "388":"/images/hongbao.png",
-  "iphone":"/images/ipjpne.png",
-  "rice":"/images/dami.png",
-  "oil":"/images/you.png"
+  "1888":"/1888.png",
+  "588":"/588.png",
+  "888":"/888.png",
+
+  "66":"/hongbao.png",
+  "88":"/hongbao.png",
+  "388":"/hongbao.png",
+
+  "iphone":"/iphone.png",
+  "rice":"/dami.png",
+  "oil":"/you.png",
+  "shouji":"/shouji.png"
 };
 
 /* deviceId */
@@ -199,22 +202,25 @@ const circle = document.getElementById("circle");
 const progressInner = document.getElementById("progressInner");
 const btnCreate = document.getElementById("btnCreate");
 const btnHelp = document.getElementById("btnHelp");
+const shareLink = document.getElementById("shareLink");
 
-/* 飘落动画 */
+/* 奖品飘落 */
 function showPrize(prizeKey){
   const img = document.createElement("img");
-  img.src = PRIZE_IMG[prizeKey] || "/images/hongbao.png";
+  img.src = PRIZE_IMG[prizeKey] || "/hongbao.png";
   img.className = "prize-float";
   circle.appendChild(img);
 
-  setTimeout(()=>circle.removeChild(img),1300);
+  setTimeout(()=>{
+    if(circle.contains(img)) circle.removeChild(img);
+  },1300);
 }
 
 /* 监听进度 */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
-    const d=snap.data();
+    const d = snap.data();
     progressInner.style.width = (d.progress||0)+"%";
   });
 }
@@ -280,6 +286,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
