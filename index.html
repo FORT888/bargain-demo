@@ -23,29 +23,12 @@ body{
   padding:22px 18px 44px;
 }
 
-/* ===== 头部品牌（仅外观修改） ===== */
-.brand{
-  text-align:center;
-  margin-bottom:14px;
-}
-.brand-logo{
-  width:92px;
-  margin:0 auto 10px;
-}
-.brand-logo img{
-  width:100%;
-  display:block;
-}
-.brand-title{
-  font-size:34px;
-  font-weight:900;
-}
-.brand-subtitle{
-  font-size:14px;
-  margin-top:4px;
-  color:#777;
-  letter-spacing:6px;
-}
+/* ===== 头部 ===== */
+.brand{text-align:center;margin-bottom:14px;}
+.brand-logo{width:92px;margin:0 auto 10px;}
+.brand-logo img{width:100%;display:block;}
+.brand-title{font-size:34px;font-weight:900;}
+.brand-subtitle{font-size:14px;margin-top:4px;color:#777;letter-spacing:6px;}
 
 /* ===== 卡片 ===== */
 .card{
@@ -58,63 +41,37 @@ body{
 }
 
 /* ===== 抽奖圆 ===== */
-.hero{
-  display:flex;
-  justify-content:center;
-  margin:26px 0 22px;
-}
+.hero{display:flex;justify-content:center;margin:26px 0 22px;}
 .circle{
-  width:260px;
-  height:260px;
-  border-radius:50%;
-  background:
-    radial-gradient(circle at 30% 30%, #ffffff, #ededed);
+  width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #ffffff, #ededed);
   box-shadow:
     inset 0 0 45px rgba(255,255,255,.9),
     inset 0 0 18px rgba(0,0,0,.04),
     0 22px 48px rgba(0,0,0,.18);
-  position:relative;
-  overflow:hidden;
+  position:relative;overflow:hidden;
 }
 
 /* ===== 进度 ===== */
 .progress-title{
-  position:absolute;
-  bottom:54px;
-  left:50%;
+  position:absolute;bottom:54px;left:50%;
   transform:translateX(-50%);
-  font-size:12px;
-  font-weight:600;
-  color:#666;
+  font-size:12px;font-weight:600;color:#666;
 }
 .progress-wrap{
-  position:absolute;
-  bottom:34px;
-  left:50%;
+  position:absolute;bottom:34px;left:50%;
   transform:translateX(-50%);
-  width:200px;
-  height:6px;
-  background:#e6e6e6;
-  border-radius:999px;
-  overflow:hidden;
+  width:200px;height:6px;
+  background:#e6e6e6;border-radius:999px;
 }
-.progress-inner{
-  height:100%;
-  width:0%;
-  background:#e60023;
-  border-radius:999px;
-}
+.progress-inner{height:100%;width:0%;background:#e60023;border-radius:999px;}
 .progress-text{
-  position:absolute;
-  bottom:20px;
-  left:50%;
+  position:absolute;bottom:20px;left:50%;
   transform:translateX(-50%);
-  font-size:12px;
-  font-weight:600;
-  color:#e60023;
+  font-size:12px;font-weight:600;color:#e60023;
 }
 
-/* ===== 轮播图片 ===== */
+/* ===== 奖品 ===== */
 .prize-item{
   position:absolute;
   top:-110px;
@@ -126,7 +83,7 @@ body{
 }
 .prize-final{
   position:absolute;
-  top:38%; /* ✅ 不挡“完成进度” */
+  top:38%;
   left:50%;
   transform:translate(-50%,-50%);
   width:165px;
@@ -138,7 +95,7 @@ body{
   100%{transform:translate(-50%,135px) scale(1);opacity:0}
 }
 
-/* ===== 恭喜提示 ===== */
+/* ===== 恭喜文案 ===== */
 .congrats{
   margin-top:10px;
   font-size:15px;
@@ -183,9 +140,7 @@ button:disabled{opacity:.5}
 <div class="container">
 
   <div class="brand">
-    <div class="brand-logo">
-      <img src="/logo.png">
-    </div>
+    <div class="brand-logo"><img src="/logo.png"></div>
     <div class="brand-title">联信资</div>
     <div class="brand-subtitle">助力抽奖</div>
   </div>
@@ -202,7 +157,6 @@ button:disabled{opacity:.5}
       </div>
     </div>
 
-    <!-- ✅ 新增：恭喜文案（不弹窗） -->
     <div class="congrats" id="congrats"></div>
 
     <button id="btnHelp" class="secondary">帮助好友助力</button>
@@ -213,7 +167,6 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ===== 原逻辑一字未动 ===== */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   projectId:"cut-demo-e11b9"
@@ -249,6 +202,7 @@ const congrats=document.getElementById("congrats");
 
 let timer=null;
 
+/* ===== 原抽奖逻辑保持 ===== */
 function playCarousel(finalKey){
   let index=0,rounds=0;
   const maxRounds=3,interval=1100;
@@ -286,40 +240,42 @@ function watch(activityId){
   });
 }
 
-window.onload=async()=>{
-  const r=await fetch(CREATE_API,{method:"POST",headers:{"x-device-id":deviceId}});
-  const d=await r.json();
-  if(d.success&&d.reused){
-    playCarousel(d.prizeKey);
+/* ⭐ 页面加载：只处理“来自分享”的情况 */
+window.onload=()=>{
+  const params=new URLSearchParams(location.search);
+  const fromActivityId=params.get("from");
+  if(fromActivityId){
     btnCreate.disabled=true;
-    btnCreate.innerText="已发起助力";
-    watch(d.activityId);
-    shareLink.innerText=location.origin+location.pathname+"?from="+d.activityId;
+    btnCreate.innerText="好友助力中";
+    watch(fromActivityId);
   }
 };
 
+/* ⭐ 自己点击发起助力 */
 btnCreate.onclick=async()=>{
   btnCreate.disabled=true;
-  const r=await fetch(CREATE_API,{method:"POST",headers:{"x-device-id":deviceId}});
+  const r=await fetch(CREATE_API,{
+    method:"POST",
+    headers:{"x-device-id":deviceId}
+  });
   const d=await r.json();
   if(!d.success)return;
+
   playCarousel(d.prizeKey);
   watch(d.activityId);
-  shareLink.innerText=location.origin+location.pathname+"?from="+d.activityId;
+  shareLink.innerText=
+    location.origin+location.pathname+"?from="+d.activityId;
 
-  /* ✅ 恭喜提示 */
   congrats.innerText="🎉 恭喜获得 "+d.prizeKey+" 奖励";
   congrats.style.display="block";
 };
 
-const params=new URLSearchParams(location.search);
-const fromActivityId=params.get("from");
-if(!fromActivityId){
-  btnHelp.disabled=true;
-  btnHelp.innerText="请分享链接给好友助力";
-}else watch(fromActivityId);
-
+/* ⭐ 帮助好友助力 */
 btnHelp.onclick=async()=>{
+  const params=new URLSearchParams(location.search);
+  const fromActivityId=params.get("from");
+  if(!fromActivityId)return;
+
   const r=await fetch(HELP_API,{
     method:"POST",
     headers:{"x-device-id":deviceId},
@@ -338,6 +294,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
