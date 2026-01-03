@@ -23,7 +23,7 @@ body{
   padding:20px 16px 40px;
 }
 
-/* LOGO（放大） */
+/* LOGO */
 .logo{
   display:block;
   margin:0 auto 10px;
@@ -48,7 +48,7 @@ body{
 .card{
   background:#fff;
   border-radius:26px;
-  padding:28px 20px 32px;
+  padding:28px 20px 34px;
   margin-top:18px;
   box-shadow:0 28px 60px rgba(0,0,0,.12);
 }
@@ -70,15 +70,27 @@ body{
   overflow:hidden;
 }
 
-/* 进度条（宽 + 高级） */
-.progress-wrap{
+/* 进度标题 */
+.progress-title{
   position:absolute;
-  bottom:22px;
+  bottom:54px;
   left:50%;
   transform:translateX(-50%);
-  width:190px;
+  font-size:12px;
+  font-weight:600;
+  color:#333;
+  z-index:6;
+}
+
+/* 进度条（更宽） */
+.progress-wrap{
+  position:absolute;
+  bottom:30px;
+  left:50%;
+  transform:translateX(-50%);
+  width:220px;               /* 更宽 */
   height:12px;
-  background:linear-gradient(180deg,#eee,#ddd);
+  background:#1f1f1f;        /* 未完成：黑灰色 */
   border-radius:999px;
   overflow:hidden;
   z-index:5;
@@ -86,7 +98,7 @@ body{
 .progress-inner{
   height:100%;
   width:0%;
-  background:linear-gradient(90deg,#ff2d55,#ff9500);
+  background:#e60023;        /* 已完成：红色 */
   border-radius:999px;
 }
 .progress-text{
@@ -97,8 +109,7 @@ body{
   justify-content:center;
   font-size:12px;
   font-weight:600;
-  color:#fff;
-  text-shadow:0 1px 2px rgba(0,0,0,.35);
+  color:#fff;                /* 百分比：白色更清晰 */
   z-index:6;
 }
 
@@ -180,10 +191,16 @@ button:disabled{opacity:.5}
 
     <div class="hero">
       <div class="circle" id="circle">
+
+        <!-- 进度标题 -->
+        <div class="progress-title">完成进度</div>
+
+        <!-- 进度条 -->
         <div class="progress-wrap">
           <div class="progress-inner" id="progressInner"></div>
           <div class="progress-text" id="progressText">0%</div>
         </div>
+
       </div>
     </div>
 
@@ -204,7 +221,6 @@ const db = firebase.firestore();
 const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* 奖品图片映射 */
 const PRIZE_IMG={
   "1888":"/1888.png",
   "588":"/588.png",
@@ -218,7 +234,6 @@ const PRIZE_IMG={
   "oil":"/you.png"
 };
 
-/* 真正的轮播顺序（所有奖品，一个不漏） */
 const CAROUSEL=[
   "1888","588","888",
   "66","88","388",
@@ -246,7 +261,7 @@ let timer=null;
 function playCarousel(finalKey){
   let index=0, rounds=0;
   const maxRounds=3;
-  const interval=1000; // 慢速轮播
+  const interval=1000;
 
   circle.querySelectorAll(".prize-item,.prize-final").forEach(el=>el.remove());
   clearInterval(timer);
@@ -339,6 +354,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
