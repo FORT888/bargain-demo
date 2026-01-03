@@ -31,19 +31,48 @@ h1{margin:8px 0}
 .prize-box{font-weight:700;margin-bottom:10px}
 .prize-box span{color:#dc2626}
 
-/* 转盘 + LOGO */
+/* ================= 转盘 ================= */
 .wheel-wrap{
   position:relative;
   width:300px;
   height:300px;
   margin:0 auto;
 }
+
+/* 指针 */
+.pointer{
+  position:absolute;
+  top:-6px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  border-left:16px solid transparent;
+  border-right:16px solid transparent;
+  border-bottom:28px solid #ef4444;
+  z-index:10;
+}
+
+/* 指针弹动动画 */
+@keyframes pointerBounce {
+  0%   { transform:translateX(-50%) translateY(0); }
+  40%  { transform:translateX(-50%) translateY(6px); }
+  70%  { transform:translateX(-50%) translateY(-3px); }
+  100% { transform:translateX(-50%) translateY(0); }
+}
+.pointer.bounce{
+  animation:pointerBounce .4s ease-out;
+}
+
+/* 转盘 */
 #wheel{
   width:100%;
   height:100%;
   border-radius:50%;
   transition:transform 3.6s cubic-bezier(.25,.9,.25,1);
 }
+
+/* 中心 LOGO */
 .center-logo{
   position:absolute;
   left:50%;
@@ -53,9 +82,10 @@ h1{margin:8px 0}
   height:120px;
   border-radius:50%;
   pointer-events:none;
+  z-index:4;
 }
 
-/* 进度条 */
+/* ================= 进度条 ================= */
 .progress-bar{
   height:14px;
   background:#fde68a;
@@ -96,7 +126,13 @@ button:disabled{opacity:.5}
   <div class="prize-box">奖品：<span id="prizeText">未确定</span></div>
 
   <div class="wheel-wrap">
+    <!-- 指针 -->
+    <div class="pointer" id="pointer"></div>
+
+    <!-- 转盘 -->
     <canvas id="wheel" width="600" height="600"></canvas>
+
+    <!-- 中心 LOGO -->
     <img src="logo.png" class="center-logo">
   </div>
 
@@ -112,7 +148,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ========= UUID ========= */
+/* ================= 工具 ================= */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -120,19 +156,7 @@ function genUUID(){
   });
 }
 
-/* ========= 安全指纹（不会阻断） ========= */
-async function getFingerprint(){
-  try{
-    const c=document.createElement("canvas");
-    const x=c.getContext("2d");
-    x.fillText("fp",2,2);
-    return btoa(c.toDataURL()+navigator.userAgent).slice(0,32);
-  }catch(e){
-    return "";
-  }
-}
-
-/* ========= Firebase ========= */
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -140,34 +164,32 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ========= API（你的真实 URL） ========= */
+/* ================= API ================= */
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ========= deviceId ========= */
+/* ================= deviceId ================= */
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
   localStorage.setItem("deviceId", deviceId);
 }
-let fingerprint="";
-(async()=>{ fingerprint=await getFingerprint(); })();
 
-/* ========= URL ========= */
+/* ================= URL ================= */
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
-/* ========= DOM ========= */
+/* ================= DOM ================= */
 const btnHelp = document.getElementById("btnHelp");
 const btnCreate = document.getElementById("btnCreate");
+const pointer = document.getElementById("pointer");
 
-/* 👉 关键修复：只有没 from 才禁用助力 */
 if(!fromActivityId){
   btnHelp.disabled = true;
   btnHelp.innerText = "请分享链接给好友助力";
 }
 
-/* ========= 转盘绘制（原样保留） ========= */
+/* ================= 转盘绘制 ================= */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -195,21 +217,29 @@ PRIZES.forEach((p,i)=>{
   ctx.translate(R,R);
   ctx.rotate(i*STEP+STEP/2);
   ctx.textAlign="right";
-  ctx.font="bold 34px PingFang SC";
+  ctx.font="bold 30px PingFang SC";
   ctx.fillStyle="#7c2d12";
-  ctx.fillText(p.label,R-30,8);
+  ctx.fillText(p.label,R-40,10);
   ctx.restore();
 });
 
-let angle=0;
+/* ================= 精准转盘 ================= */
 function spinTo(prizeKey){
   const idx = PRIZES.findIndex(p=>p.key===prizeKey);
   if(idx<0) return;
-  angle += 1440 + idx*(360/PRIZES.length);
+
+  const per = 360 / PRIZES.length;
+  const angle = 360*4 + (360 - (idx*per + per/2));
+
+  // 指针开始弹
+  pointer.classList.remove("bounce");
+  void pointer.offsetWidth;
+  pointer.classList.add("bounce");
+
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ========= Firestore 监听 ========= */
+/* ================= Firestore 监听 ================= */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
@@ -222,14 +252,13 @@ function watch(activityId){
   });
 }
 
-/* ========= 发起 ========= */
+/* ================= 发起 ================= */
 btnCreate.onclick = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-device-id":deviceId,
-      "x-fingerprint":fingerprint
+      "x-device-id":deviceId
     }
   });
   const d = await r.json();
@@ -242,7 +271,7 @@ btnCreate.onclick = async ()=>{
     location.origin + location.pathname + "?from=" + d.activityId;
 };
 
-/* ========= 助力（关键修复版） ========= */
+/* ================= 助力 ================= */
 btnHelp.onclick = async ()=>{
   if(btnHelp.disabled) return;
 
@@ -250,12 +279,10 @@ btnHelp.onclick = async ()=>{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-device-id":deviceId,
-      "x-fingerprint":fingerprint
+      "x-device-id":deviceId
     },
     body:JSON.stringify({ activityId: fromActivityId })
   });
-
   const d = await r.json();
 
   if(!d.success){
@@ -265,15 +292,10 @@ btnHelp.onclick = async ()=>{
     return;
   }
 
-  const p=Number(d.progress||0);
-  document.getElementById("progressInner").style.width=p+"%";
-  document.getElementById("progressText").innerText="完成进度 "+p.toFixed(1)+"%";
-
   btnHelp.disabled=true;
   btnHelp.innerText="已成功助力 🎉";
 };
 
-/* ========= 好友页自动监听 ========= */
 if(fromActivityId){
   watch(fromActivityId);
 }
@@ -281,6 +303,7 @@ if(fromActivityId){
 
 </body>
 </html>
+
 
 
 
