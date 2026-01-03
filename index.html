@@ -9,39 +9,65 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
+/* ================= 基础 ================= */
 body{
   margin:0;
   min-height:100vh;
+  padding:20px 0 40px;
   display:flex;
   justify-content:center;
-  align-items:center;
   background:radial-gradient(circle at top,#fff7ed,#fee2e2);
   font-family:"PingFang SC","Microsoft YaHei",sans-serif;
 }
+
 .card{
   width:92%;
   max-width:420px;
   background:#fff;
   border-radius:24px;
-  padding:20px;
+  padding:30px 20px;
   text-align:center;
   box-shadow:0 20px 60px rgba(0,0,0,.15);
 }
-h1{margin:8px 0}
-.prize-box{font-weight:700;margin-bottom:10px}
-.prize-box span{color:#dc2626}
+
+/* ================= Logo ================= */
+.logo-wrap{
+  margin-bottom:36px;
+  display:flex;
+  justify-content:center;
+}
+
+.logo{
+  width:160px;
+  max-width:70%;
+  height:auto;
+  animation:fadeDown .6s ease;
+}
+
+@keyframes fadeDown{
+  from{opacity:0;transform:translateY(-10px)}
+  to{opacity:1;transform:none}
+}
+
+/* ================= 标题 ================= */
+h1{
+  margin:0 0 24px;
+  font-size:20px;
+}
 
 /* ================= 宝箱 ================= */
 .chest-wrap{
-  display:flex;
-  justify-content:center;
-  margin:30px 0 10px;
+  position:relative;
+  margin:10px 0 30px;
 }
+
 .chest{
   position:relative;
   width:160px;
   height:120px;
+  margin:0 auto;
 }
+
 .chest-body{
   position:absolute;
   bottom:0;
@@ -50,6 +76,7 @@ h1{margin:8px 0}
   background:linear-gradient(#fbbf24,#f59e0b);
   border-radius:0 0 18px 18px;
 }
+
 .chest-lid{
   position:absolute;
   top:0;
@@ -60,28 +87,40 @@ h1{margin:8px 0}
   transform-origin:bottom center;
   transition:transform .6s ease;
 }
-@keyframes shake{
-  0%{transform:rotate(0)}
-  25%{transform:rotate(-6deg)}
-  50%{transform:rotate(6deg)}
-  75%{transform:rotate(-4deg)}
-  100%{transform:rotate(0)}
-}
-.chest.shake{animation:shake .4s ease;}
-.chest.open .chest-lid{transform:rotateX(75deg);}
 
-/* ================= 结果 ================= */
+.chest.open .chest-lid{
+  transform:rotateX(75deg);
+}
+
+/* ================= 奖品弹出 ================= */
+.prize-pop{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%) scale(.3);
+  opacity:0;
+  pointer-events:none;
+  transition:all .5s cubic-bezier(.2,.8,.2,1);
+}
+
+.prize-pop.show{
+  transform:translate(-50%, -140%) scale(1);
+  opacity:1;
+}
+
+.prize-pop img{
+  width:170px;
+  height:auto;
+  filter:drop-shadow(0 12px 22px rgba(0,0,0,.25));
+}
+
+/* ================= 文案 ================= */
 .result{
   display:none;
   margin-top:16px;
   font-size:22px;
   font-weight:800;
   color:#dc2626;
-  animation:pop .4s ease;
-}
-@keyframes pop{
-  from{transform:scale(.6);opacity:0}
-  to{transform:scale(1);opacity:1}
 }
 
 /* ================= 进度 ================= */
@@ -90,44 +129,62 @@ h1{margin:8px 0}
   background:#fde68a;
   border-radius:999px;
   overflow:hidden;
-  margin-top:20px;
+  margin-top:30px;
 }
+
 .progress-inner{
   height:100%;
   width:0%;
   background:linear-gradient(90deg,#ef4444,#f59e0b);
 }
-.progress-text{font-size:13px;margin-top:6px}
+
+.progress-text{
+  font-size:13px;
+  margin-top:6px;
+}
 
 /* ================= 按钮 ================= */
 button{
   width:100%;
-  margin-top:12px;
+  margin-top:14px;
   padding:14px;
   border:none;
   border-radius:14px;
   font-size:16px;
 }
+
 .primary{background:#ef4444;color:#fff}
 .secondary{background:#fff1f2;color:#ef4444}
 button:disabled{opacity:.5}
-.link{font-size:12px;margin-top:8px;word-break:break-all}
+
+.link{
+  font-size:12px;
+  margin-top:10px;
+  word-break:break-all;
+}
 </style>
 </head>
 
 <body>
-<div class="card">
-  <h1>联信资 · 助力抽奖</h1>
 
-  <div class="prize-box">
-    奖品：<span id="prizeText">未确定</span>
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <img src="images/logo.png" class="logo">
   </div>
+
+  <h1>联信资 · 助力抽奖</h1>
 
   <!-- 宝箱 -->
   <div class="chest-wrap">
     <div class="chest" id="chest">
       <div class="chest-lid"></div>
       <div class="chest-body"></div>
+    </div>
+
+    <div class="prize-pop" id="prizePop">
+      <img id="prizeImg">
     </div>
   </div>
 
@@ -159,7 +216,7 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= 奖品（已改） ================= */
+/* ================= 奖品文案 ================= */
 const PRIZES = [
   {key:"66",label:"66 元"},
   {key:"88",label:"88 元"},
@@ -183,97 +240,80 @@ if(!deviceId){
   localStorage.setItem("deviceId",deviceId);
 }
 
-/* ================= 参数 ================= */
-const params = new URLSearchParams(location.search);
-const fromActivityId = params.get("from");
-
 /* ================= DOM ================= */
+const chest = document.getElementById("chest");
+const prizePop = document.getElementById("prizePop");
+const prizeImg = document.getElementById("prizeImg");
+const result = document.getElementById("result");
+const resultText = document.getElementById("resultText");
 const btnCreate = document.getElementById("btnCreate");
-const btnHelp   = document.getElementById("btnHelp");
-const chest     = document.getElementById("chest");
-const result    = document.getElementById("result");
-const resultText= document.getElementById("resultText");
-const prizeText = document.getElementById("prizeText");
+const btnHelp = document.getElementById("btnHelp");
 
-/* ================= 进度监听 ================= */
-function watch(activityId){
-  db.collection("activities").doc(activityId).onSnapshot(snap=>{
-    if(!snap.exists) return;
-    const d = snap.data();
-    document.getElementById("progressInner").style.width = (d.progress||0)+"%";
-    document.getElementById("progressText").innerText =
-      "完成进度 "+(d.progress||0).toFixed(1)+"%";
-
-    const prize = PRIZES.find(p=>p.key===d.prizeKey);
-    if(prize) prizeText.innerText = prize.label;
-  });
-}
-
-/* ================= 页面加载：恢复状态 ================= */
-window.addEventListener("load", async ()=>{
-  const r = await fetch(CREATE_API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-device-id":deviceId
-    }
-  });
-  const d = await r.json();
-  if(!d.success || !d.reused) return;
-
-  const prize = PRIZES.find(p=>p.key===d.prizeKey);
+/* ================= 渲染奖品 ================= */
+function renderPrize(prizeKey){
+  const prize = PRIZES.find(p=>p.key===prizeKey);
   if(prize){
-    prizeText.innerText = prize.label;
     resultText.innerText = prize.label;
     result.style.display="block";
   }
 
-  chest.classList.add("open");
-  btnCreate.disabled=true;
-  btnCreate.innerText="已发起助力";
+  prizeImg.src = prizeKey === "iphone"
+    ? "images/iphone.png"
+    : "images/hongbao.png";
 
-  watch(d.activityId);
+  prizePop.classList.add("show");
+}
 
-  document.getElementById("shareLink").innerText =
-    location.origin + location.pathname + "?from=" + d.activityId;
-});
+/* ================= 监听进度 ================= */
+function watch(activityId){
+  db.collection("activities").doc(activityId).onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const d = snap.data();
+    document.getElementById("progressInner").style.width=(d.progress||0)+"%";
+    document.getElementById("progressText").innerText =
+      "完成进度 "+(d.progress||0).toFixed(1)+"%";
+  });
+}
+
+/* ================= 页面加载：恢复状态 ================= */
+window.onload = async ()=>{
+  const r = await fetch(CREATE_API,{
+    method:"POST",
+    headers:{"x-device-id":deviceId}
+  });
+  const d = await r.json();
+  if(d.success && d.reused){
+    renderPrize(d.prizeKey);
+    chest.classList.add("open");
+    btnCreate.disabled=true;
+    btnCreate.innerText="已发起助力";
+    watch(d.activityId);
+    document.getElementById("shareLink").innerText =
+      location.origin + location.pathname + "?from=" + d.activityId;
+  }
+};
 
 /* ================= 发起助力 ================= */
 btnCreate.onclick = async ()=>{
   btnCreate.disabled=true;
-
   const r = await fetch(CREATE_API,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-device-id":deviceId
-    }
+    headers:{"x-device-id":deviceId}
   });
   const d = await r.json();
   if(!d.success) return;
 
-  if(d.reused){
-    alert("你已经发起过助力了");
-    watch(d.activityId);
-    return;
-  }
-
-  chest.classList.add("shake");
-  setTimeout(()=>{
-    chest.classList.remove("shake");
-    chest.classList.add("open");
-
-    const prize = PRIZES.find(p=>p.key===d.prizeKey);
-    resultText.innerText = prize ? prize.label : d.prizeKey;
-    result.style.display="block";
-
-    watch(d.activityId);
-    document.getElementById("shareLink").innerText =
-      location.origin + location.pathname + "?from=" + d.activityId;
-  },500);
+  renderPrize(d.prizeKey);
+  chest.classList.add("open");
+  watch(d.activityId);
+  document.getElementById("shareLink").innerText =
+    location.origin + location.pathname + "?from=" + d.activityId;
 };
 
 /* ================= 助力 ================= */
+const params = new URLSearchParams(location.search);
+const fromActivityId = params.get("from");
+
 if(!fromActivityId){
   btnHelp.disabled=true;
   btnHelp.innerText="请分享链接给好友助力";
@@ -284,10 +324,7 @@ if(!fromActivityId){
 btnHelp.onclick = async ()=>{
   const r = await fetch(HELP_API,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-device-id":deviceId
-    },
+    headers:{"x-device-id":deviceId},
     body:JSON.stringify({activityId:fromActivityId})
   });
   const d = await r.json();
@@ -301,8 +338,10 @@ btnHelp.onclick = async ()=>{
   btnHelp.innerText="已成功助力 🎉";
 };
 </script>
+
 </body>
 </html>
+
 
 
 
