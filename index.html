@@ -39,43 +39,53 @@ h1{margin:8px 0}
   margin:0 auto;
 }
 
-/* 指针（完整：箭头 + 竖线，完全在轮盘内） */
-.pointer{
+/* ================= 中心指针（唯一修改区域） ================= */
+.pointer-center{
   position:absolute;
-  top:12px;                 /* 确保不超出轮盘 */
   left:50%;
-  transform:translateX(-50%);
-  width:20px;
-  height:46px;              /* 指针总高度 */
-  z-index:10;
-  pointer-events:none;
-}
-.pointer-head{
+  top:50%;
+  transform:translate(-50%,-50%);
   width:0;
   height:0;
-  margin:0 auto;
-  border-left:7px solid transparent;
-  border-right:7px solid transparent;
-  border-bottom:12px solid #ef4444;
-}
-.pointer-line{
-  width:2px;
-  height:28px;
-  background:#ef4444;
-  margin:0 auto;
-  border-radius:1px;
+  z-index:12;
+  pointer-events:none;
 }
 
-/* 指针弹动动画 */
-@keyframes pointerBounce {
-  0%   { transform:translateX(-50%) translateY(0); }
-  40%  { transform:translateX(-50%) translateY(5px); }
-  70%  { transform:translateX(-50%) translateY(-2px); }
-  100% { transform:translateX(-50%) translateY(0); }
+/* 指针杆：从中心向外 */
+.pointer-arm{
+  position:absolute;
+  left:-2px;
+  bottom:0;
+  width:4px;
+  height:92px;              /* 指针长度（刚好到外圈） */
+  background:#e11d48;
+  border-radius:2px;
+  transform-origin:bottom center;
 }
-.pointer.bounce{
-  animation:pointerBounce .35s ease-out;
+
+/* 指针头：小三角 */
+.pointer-head{
+  position:absolute;
+  left:-7px;
+  bottom:92px;
+  width:0;
+  height:0;
+  border-left:7px solid transparent;
+  border-right:7px solid transparent;
+  border-bottom:12px solid #e11d48;
 }
+
+/* 指针弹动（围绕中心轻微摆动） */
+@keyframes centerPointerBounce{
+  0%   { transform:translate(-50%,-50%) rotate(0deg); }
+  40%  { transform:translate(-50%,-50%) rotate(-6deg); }
+  70%  { transform:translate(-50%,-50%) rotate(3deg); }
+  100% { transform:translate(-50%,-50%) rotate(0deg); }
+}
+.pointer-center.bounce{
+  animation:centerPointerBounce .4s ease-out;
+}
+/* ================= 指针结束 ================= */
 
 /* 转盘 */
 #wheel{
@@ -139,10 +149,10 @@ button:disabled{opacity:.5}
   <div class="prize-box">奖品：<span id="prizeText">未确定</span></div>
 
   <div class="wheel-wrap">
-    <!-- 指针 -->
-    <div class="pointer" id="pointer">
+    <!-- 中心指针（结构只在这里变） -->
+    <div class="pointer-center" id="pointer">
+      <div class="pointer-arm"></div>
       <div class="pointer-head"></div>
-      <div class="pointer-line"></div>
     </div>
 
     <!-- 转盘 -->
@@ -164,7 +174,8 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ========= UUID ========= */
+/* ========= 以下 JS 与你之前一致，未修改 ========= */
+
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -172,7 +183,6 @@ function genUUID(){
   });
 }
 
-/* ========= Firebase ========= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -180,22 +190,18 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ========= API（你的 Cloud Run URL） ========= */
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ========= deviceId ========= */
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
   localStorage.setItem("deviceId", deviceId);
 }
 
-/* ========= URL ========= */
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
-/* ========= DOM ========= */
 const btnHelp = document.getElementById("btnHelp");
 const btnCreate = document.getElementById("btnCreate");
 const pointer = document.getElementById("pointer");
@@ -205,7 +211,6 @@ if(!fromActivityId){
   btnHelp.innerText = "请分享链接给好友助力";
 }
 
-/* ========= 转盘绘制 ========= */
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 const R = 300;
@@ -239,7 +244,6 @@ PRIZES.forEach((p,i)=>{
   ctx.restore();
 });
 
-/* ========= 精准旋转 ========= */
 function spinTo(prizeKey){
   const idx = PRIZES.findIndex(p=>p.key===prizeKey);
   if(idx<0) return;
@@ -247,7 +251,6 @@ function spinTo(prizeKey){
   const per = 360 / PRIZES.length;
   const angle = 360*4 + (360 - (idx*per + per/2));
 
-  // 指针弹动
   pointer.classList.remove("bounce");
   void pointer.offsetWidth;
   pointer.classList.add("bounce");
@@ -255,7 +258,6 @@ function spinTo(prizeKey){
   canvas.style.transform = `rotate(${angle}deg)`;
 }
 
-/* ========= Firestore 监听 ========= */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
@@ -268,7 +270,6 @@ function watch(activityId){
   });
 }
 
-/* ========= 发起 ========= */
 btnCreate.onclick = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
@@ -287,7 +288,6 @@ btnCreate.onclick = async ()=>{
     location.origin + location.pathname + "?from=" + d.activityId;
 };
 
-/* ========= 助力 ========= */
 btnHelp.onclick = async ()=>{
   if(btnHelp.disabled) return;
 
@@ -319,6 +319,7 @@ if(fromActivityId){
 
 </body>
 </html>
+
 
 
 
