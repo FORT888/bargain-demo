@@ -13,190 +13,167 @@
 body{
   margin:0;
   min-height:100vh;
-  padding:20px 0 40px;
+  background:#f8f8f8;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial;
   display:flex;
   justify-content:center;
-  background:radial-gradient(circle at top,#fff7ed,#fee2e2);
-  font-family:"PingFang SC","Microsoft YaHei",sans-serif;
 }
 
-.card{
-  width:92%;
+.container{
+  width:100%;
   max-width:420px;
+  padding:32px 20px 48px;
+}
+
+/* ================= LOGO ================= */
+.logo-wrap{
+  display:flex;
+  justify-content:center;
+  margin-bottom:28px;
+}
+.logo{
+  width:150px;
+  height:auto;
+}
+
+/* ================= 卡片 ================= */
+.card{
   background:#fff;
   border-radius:24px;
-  padding:30px 20px;
-  text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.15);
+  padding:36px 24px 32px;
+  box-shadow:0 24px 64px rgba(0,0,0,.08);
 }
 
-/* ================= Logo ================= */
-.logo-wrap{
-  margin-bottom:36px;
+/* ================= 主视觉 ================= */
+.hero{
   display:flex;
   justify-content:center;
+  margin:20px 0 18px;
 }
-
-.logo{
-  width:160px;
-  max-width:70%;
+.hero-img{
+  width:210px;
   height:auto;
+  filter:drop-shadow(0 24px 48px rgba(0,0,0,.25));
+  animation:heroIn .6s ease;
 }
 
-/* ================= 标题 ================= */
-h1{
-  margin:0 0 24px;
-  font-size:20px;
-}
-
-/* ================= 宝箱 ================= */
-.chest-wrap{
-  position:relative;
-  margin:10px 0 30px;
-}
-
-.chest{
-  position:relative;
-  width:160px;
-  height:120px;
-  margin:0 auto;
-}
-
-.chest-body{
-  position:absolute;
-  bottom:0;
-  width:100%;
-  height:80px;
-  background:linear-gradient(#fbbf24,#f59e0b);
-  border-radius:0 0 18px 18px;
-}
-
-.chest-lid{
-  position:absolute;
-  top:0;
-  width:100%;
-  height:48px;
-  background:linear-gradient(#fde68a,#fbbf24);
-  border-radius:18px 18px 10px 10px;
-  transform-origin:bottom center;
-  transition:transform .6s ease;
-}
-
-.chest.open .chest-lid{
-  transform:rotateX(75deg);
-}
-
-/* ================= 奖品弹出 ================= */
-.prize-pop{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%, -50%) scale(.3);
-  opacity:0;
-  pointer-events:none;
-  transition:all .5s cubic-bezier(.2,.8,.2,1);
-  z-index:10;
-}
-
-.prize-pop.show{
-  transform:translate(-50%, -140%) scale(1);
-  opacity:1;
-}
-
-.prize-pop img{
-  width:170px;
-  height:auto;
-  filter:drop-shadow(0 12px 22px rgba(0,0,0,.25));
+@keyframes heroIn{
+  from{
+    opacity:0;
+    transform:translateY(24px) scale(.92);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
 }
 
 /* ================= 文案 ================= */
-.result{
-  display:none;
-  margin-top:16px;
+.hero-text{
+  text-align:center;
+  margin-bottom:28px;
+}
+.hero-sub{
+  font-size:14px;
+  color:#999;
+  margin-bottom:6px;
+}
+.hero-title{
   font-size:22px;
-  font-weight:800;
-  color:#dc2626;
+  font-weight:700;
+  color:#111;
 }
 
 /* ================= 进度 ================= */
+.progress-wrap{
+  margin:24px 0 18px;
+}
 .progress-bar{
-  height:14px;
-  background:#fde68a;
+  height:8px;
+  background:#eee;
   border-radius:999px;
   overflow:hidden;
-  margin-top:30px;
 }
-
 .progress-inner{
   height:100%;
   width:0%;
-  background:linear-gradient(90deg,#ef4444,#f59e0b);
+  background:#111;
 }
-
 .progress-text{
-  font-size:13px;
-  margin-top:6px;
+  font-size:12px;
+  color:#999;
+  text-align:center;
+  margin-top:8px;
 }
 
 /* ================= 按钮 ================= */
-button{
+.btn{
   width:100%;
-  margin-top:14px;
   padding:14px;
-  border:none;
   border-radius:14px;
+  border:none;
   font-size:16px;
+  margin-top:12px;
+}
+.primary{
+  background:#111;
+  color:#fff;
+}
+.secondary{
+  background:#f2f2f2;
+  color:#111;
+}
+.btn:disabled{
+  opacity:.5;
 }
 
-.primary{background:#ef4444;color:#fff}
-.secondary{background:#fff1f2;color:#ef4444}
-button:disabled{opacity:.5}
-
+/* ================= 链接 ================= */
 .link{
+  margin-top:16px;
   font-size:12px;
-  margin-top:10px;
+  color:#999;
   word-break:break-all;
+  text-align:center;
 }
 </style>
 </head>
 
 <body>
 
-<div class="card">
+<div class="container">
 
-  <!-- Logo -->
+  <!-- LOGO -->
   <div class="logo-wrap">
     <img src="/logo.png" class="logo" alt="logo">
   </div>
 
-  <h1>联信资 · 助力抽奖</h1>
+  <div class="card">
 
-  <!-- 宝箱 -->
-  <div class="chest-wrap">
-    <div class="chest" id="chest">
-      <div class="chest-lid"></div>
-      <div class="chest-body"></div>
+    <!-- 主视觉 -->
+    <div class="hero">
+      <img id="prizeImg" class="hero-img" />
     </div>
 
-    <div class="prize-pop" id="prizePop">
-      <img id="prizeImg" alt="prize">
+    <!-- 文案 -->
+    <div class="hero-text">
+      <div class="hero-sub">恭喜获得</div>
+      <div class="hero-title" id="resultText">—</div>
     </div>
+
+    <!-- 进度 -->
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-inner" id="progressInner"></div>
+      </div>
+      <div class="progress-text" id="progressText">完成进度 0%</div>
+    </div>
+
+    <!-- 按钮 -->
+    <button id="btnHelp" class="btn secondary">帮助好友助力</button>
+    <button id="btnCreate" class="btn primary">发起助力</button>
+
+    <div class="link" id="shareLink"></div>
   </div>
-
-  <div class="result" id="result">
-    🎉 恭喜获得：<span id="resultText"></span>
-  </div>
-
-  <!-- 进度 -->
-  <div class="progress-bar">
-    <div class="progress-inner" id="progressInner"></div>
-  </div>
-  <div class="progress-text" id="progressText">完成进度 0%</div>
-
-  <button id="btnHelp" class="secondary">帮助好友助力</button>
-  <button id="btnCreate" class="primary">发起助力试试</button>
-
-  <div class="link" id="shareLink"></div>
 </div>
 
 <script>
@@ -211,7 +188,7 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= 奖品文案 ================= */
+/* ================= 奖品 ================= */
 const PRIZES = [
   {key:"66",label:"66 元"},
   {key:"88",label:"88 元"},
@@ -229,38 +206,26 @@ function genUUID(){
     return v.toString(16);
   });
 }
-let deviceId = localStorage.getItem("deviceId");
-if(!deviceId){
-  deviceId = genUUID();
-  localStorage.setItem("deviceId",deviceId);
-}
+let deviceId = localStorage.deviceId || (localStorage.deviceId=genUUID());
 
 /* ================= DOM ================= */
-const chest = document.getElementById("chest");
-const prizePop = document.getElementById("prizePop");
 const prizeImg = document.getElementById("prizeImg");
-const result = document.getElementById("result");
 const resultText = document.getElementById("resultText");
+const progressInner = document.getElementById("progressInner");
+const progressText = document.getElementById("progressText");
 const btnCreate = document.getElementById("btnCreate");
 const btnHelp = document.getElementById("btnHelp");
 
 /* ================= 渲染奖品 ================= */
 function renderPrize(prizeKey){
-  const prize = PRIZES.find(p=>p.key===prizeKey);
-  if(prize){
-    resultText.innerText = prize.label;
-    result.style.display="block";
+  if(prizeKey === "iphone"){
+    prizeImg.src = "/iphone.png";
+    resultText.innerText = "iPhone 17 Pro Max";
+  }else{
+    prizeImg.src = "/hongbao.png";
+    resultText.innerText =
+      PRIZES.find(p=>p.key===prizeKey)?.label || "";
   }
-
-  prizeImg.onerror = () => {
-    console.error("图片加载失败：", prizeImg.src);
-  };
-
-  prizeImg.src = prizeKey === "iphone"
-    ? "/iphone.png"
-    : "/hongbao.png";
-
-  prizePop.classList.add("show");
 }
 
 /* ================= 监听进度 ================= */
@@ -268,13 +233,13 @@ function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
     const d = snap.data();
-    document.getElementById("progressInner").style.width=(d.progress||0)+"%";
-    document.getElementById("progressText").innerText =
-      "完成进度 "+(d.progress||0).toFixed(1)+"%";
+    progressInner.style.width = (d.progress||0) + "%";
+    progressText.innerText =
+      "完成进度 " + (d.progress||0).toFixed(1) + "%";
   });
 }
 
-/* ================= 页面加载：恢复状态 ================= */
+/* ================= 页面加载 ================= */
 window.onload = async ()=>{
   const r = await fetch(CREATE_API,{
     method:"POST",
@@ -283,7 +248,6 @@ window.onload = async ()=>{
   const d = await r.json();
   if(d.success && d.reused){
     renderPrize(d.prizeKey);
-    chest.classList.add("open");
     btnCreate.disabled=true;
     btnCreate.innerText="已发起助力";
     watch(d.activityId);
@@ -301,9 +265,7 @@ btnCreate.onclick = async ()=>{
   });
   const d = await r.json();
   if(!d.success) return;
-
   renderPrize(d.prizeKey);
-  chest.classList.add("open");
   watch(d.activityId);
   document.getElementById("shareLink").innerText =
     location.origin + location.pathname + "?from=" + d.activityId;
@@ -340,6 +302,7 @@ btnHelp.onclick = async ()=>{
 
 </body>
 </html>
+
 
 
 
