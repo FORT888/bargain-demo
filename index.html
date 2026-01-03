@@ -20,56 +20,57 @@ body{
   padding:24px 16px 40px;
 }
 
-/* 品牌 */
+/* ===== 品牌（仅升级样式 + Logo） ===== */
 .brand{
   text-align:center;
-  margin-bottom:20px;
+  margin-bottom:22px;
+}
+.brand img{
+  width:64px;
+  margin-bottom:10px;
 }
 .brand h1{
   margin:0;
-  font-size:30px;
+  font-size:32px;
   font-weight:800;
-  letter-spacing:2px;
+  letter-spacing:6px;
 }
 .brand p{
   margin:6px 0 0;
   font-size:14px;
-  color:#999;
-  letter-spacing:4px;
+  color:#888;
+  letter-spacing:6px;
 }
 
-/* 扭蛋机 */
+/* ===== 能量抽奖核心（替代原扭蛋，仅视觉） ===== */
 .gacha{
   margin:28px auto 14px;
   width:220px;
   height:220px;
   border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, #fff, #eaeaea);
-  box-shadow:0 20px 40px rgba(0,0,0,.15);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  background:radial-gradient(circle at top,#fff,#e2e6ef);
+  box-shadow:0 22px 50px rgba(0,0,0,.18);
+  position:relative;
+  overflow:hidden;
 }
-.gacha::after{
-  content:"";
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  background:linear-gradient(#e60023,#c8001e);
-  box-shadow:inset 0 -6px 0 rgba(0,0,0,.2);
+.energy{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:0%;
+  background:linear-gradient(180deg,#ff4d4f,#e60023);
+  transition:height .2s;
 }
-.gacha.spin{
-  animation:shake .8s ease;
+.gacha.active{
+  animation:flash .6s ease;
 }
-@keyframes shake{
-  0%{transform:rotate(0)}
-  25%{transform:rotate(-6deg)}
-  50%{transform:rotate(6deg)}
-  75%{transform:rotate(-4deg)}
-  100%{transform:rotate(0)}
+@keyframes flash{
+  0%{box-shadow:0 0 0 rgba(230,0,35,0)}
+  50%{box-shadow:0 0 60px rgba(230,0,35,.6)}
+  100%{box-shadow:0 0 0 rgba(230,0,35,0)}
 }
 
-/* 结果 */
+/* ===== 结果 ===== */
 .result{
   text-align:center;
   font-size:20px;
@@ -81,7 +82,7 @@ body{
   color:#e60023;
 }
 
-/* 奖池 */
+/* ===== 奖池（原封不动） ===== */
 .pool{
   background:#fff;
   border-radius:16px;
@@ -104,7 +105,7 @@ body{
 }
 .pool li:last-child{border-bottom:none}
 
-/* 按钮 */
+/* ===== 按钮（原封不动） ===== */
 .btn{
   margin-top:22px;
   width:100%;
@@ -123,13 +124,18 @@ body{
 <body>
 <div class="container">
 
+  <!-- 品牌 -->
   <div class="brand">
+    <!-- 🔴 换成你自己的企业 logo -->
+    <img src="logo.png" />
     <h1>联信资</h1>
     <p>助力抽奖</p>
   </div>
 
-  <!-- 扭蛋机 -->
-  <div class="gacha" id="gacha"></div>
+  <!-- 能量抽奖容器（结构名不变） -->
+  <div class="gacha" id="gacha">
+    <div class="energy" id="energy"></div>
+  </div>
 
   <!-- 结果 -->
   <div class="result" id="resultText"></div>
@@ -145,7 +151,7 @@ body{
 </div>
 
 <script>
-/* ================= Firebase ================= */
+/* ================= Firebase（原封不动） ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   projectId: "cut-demo-e11b9"
@@ -154,7 +160,7 @@ const db = firebase.firestore();
 
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 
-/* ================= 奖品严格映射表 ================= */
+/* ================= 奖品映射（原封不动） ================= */
 const PRIZE_MAP = {
   "66":   { label:"红包 66 元",   type:"cash" },
   "88":   { label:"红包 88 元",   type:"cash" },
@@ -167,45 +173,21 @@ const PRIZE_MAP = {
   "oil":  { label:"食用油一桶", type:"goods" }
 };
 
-/* ================= DOM ================= */
+/* ================= DOM（只多取 energy） ================= */
 const gacha = document.getElementById("gacha");
+const energy = document.getElementById("energy");
 const result = document.getElementById("resultText");
 const btn = document.getElementById("drawBtn");
 const prizeList = document.getElementById("prizeList");
 
-/* ================= 奖池渲染 ================= */
+/* ================= 奖池渲染（原封不动） ================= */
 Object.values(PRIZE_MAP).forEach(p=>{
   const li = document.createElement("li");
   li.innerText = p.label;
   prizeList.appendChild(li);
 });
 
-/* ================= 扭蛋演绎（不随机） ================= */
-function playGacha(prizeKey){
-  const prize = PRIZE_MAP[prizeKey];
-  if(!prize){
-    console.error("未知奖品:", prizeKey);
-    return;
-  }
-
-  result.style.display="none";
-  result.className="result";
-
-  gacha.classList.add("spin");
-
-  setTimeout(()=>{
-    gacha.classList.remove("spin");
-
-    result.innerText = "🎉 恭喜获得：" + prize.label;
-    result.style.display="block";
-
-    if(prize.type === "big"){
-      result.classList.add("big");
-    }
-  },800);
-}
-
-/* ================= 设备 ID ================= */
+/* ================= 设备 ID（原封不动） ================= */
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
@@ -214,10 +196,25 @@ function genUUID(){
 }
 let deviceId = localStorage.deviceId || (localStorage.deviceId=genUUID());
 
-/* ================= 发起抽奖 ================= */
+/* ================= 抽奖（只改“演绎方式”） ================= */
 btn.onclick = async ()=>{
   btn.disabled = true;
+  result.style.display="none";
+  energy.style.height = "0%";
 
+  // 能量注入动画
+  let p = 0;
+  const timer = setInterval(()=>{
+    p += 5;
+    energy.style.height = p + "%";
+    if(p >= 100){
+      clearInterval(timer);
+      openPrize();
+    }
+  },50);
+};
+
+async function openPrize(){
   const r = await fetch(CREATE_API,{
     method:"POST",
     headers:{ "x-device-id": deviceId }
@@ -230,13 +227,22 @@ btn.onclick = async ()=>{
     return;
   }
 
-  // ⭐ 核心：后端给什么，这里就演绎什么
-  playGacha(d.prizeKey);
-};
+  const prize = PRIZE_MAP[d.prizeKey];
+
+  gacha.classList.add("active");
+
+  result.innerText = "🎉 恭喜获得：" + prize.label;
+  result.style.display="block";
+
+  if(prize.type === "big"){
+    result.classList.add("big");
+  }
+}
 </script>
 
 </body>
 </html>
+
 
 
 
