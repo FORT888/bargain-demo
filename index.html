@@ -39,48 +39,51 @@ h1{margin:8px 0}
   margin:0 auto;
 }
 
-/* ================= 正常轮盘指针（修正后） ================= */
+/* ================= 中心指针（唯一修改区域） ================= */
 .pointer-center{
   position:absolute;
   left:50%;
   top:50%;
   transform:translate(-50%,-50%);
+  width:0;
+  height:0;
   z-index:12;
   pointer-events:none;
 }
 
-/* 指针杆：短、低调，从 logo 顶部出来 */
+/* 指针杆：从中心向外 */
 .pointer-arm{
   position:absolute;
-  left:-1.5px;
-  bottom:60px;              /* 👈 从 logo 顶部开始 */
-  width:3px;
-  height:42px;              /* 👈 明显变短 */
-  background:#dc2626;
+  left:-2px;
+  bottom:0;
+  width:4px;
+  height:92px;              /* 指针长度（刚好到外圈） */
+  background:#e11d48;
   border-radius:2px;
+  transform-origin:bottom center;
 }
 
-/* 指针头：小 */
+/* 指针头：小三角 */
 .pointer-head{
   position:absolute;
-  left:-6px;
-  bottom:102px;             /* 60 + 42 */
+  left:-7px;
+  bottom:92px;
   width:0;
   height:0;
-  border-left:6px solid transparent;
-  border-right:6px solid transparent;
-  border-bottom:10px solid #dc2626;
+  border-left:7px solid transparent;
+  border-right:7px solid transparent;
+  border-bottom:12px solid #e11d48;
 }
 
-/* 轻微弹动（真实感，不夸张） */
+/* 指针弹动（围绕中心轻微摆动） */
 @keyframes centerPointerBounce{
   0%   { transform:translate(-50%,-50%) rotate(0deg); }
-  40%  { transform:translate(-50%,-50%) rotate(-4deg); }
-  70%  { transform:translate(-50%,-50%) rotate(2deg); }
+  40%  { transform:translate(-50%,-50%) rotate(-6deg); }
+  70%  { transform:translate(-50%,-50%) rotate(3deg); }
   100% { transform:translate(-50%,-50%) rotate(0deg); }
 }
 .pointer-center.bounce{
-  animation:centerPointerBounce .35s ease-out;
+  animation:centerPointerBounce .4s ease-out;
 }
 /* ================= 指针结束 ================= */
 
@@ -146,13 +149,16 @@ button:disabled{opacity:.5}
   <div class="prize-box">奖品：<span id="prizeText">未确定</span></div>
 
   <div class="wheel-wrap">
-    <!-- 正常轮盘指针 -->
+    <!-- 中心指针（结构只在这里变） -->
     <div class="pointer-center" id="pointer">
       <div class="pointer-arm"></div>
       <div class="pointer-head"></div>
     </div>
 
+    <!-- 转盘 -->
     <canvas id="wheel" width="600" height="600"></canvas>
+
+    <!-- 中心 LOGO -->
     <img src="logo.png" class="center-logo">
   </div>
 
@@ -168,17 +174,152 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* JS 与你原来一致，仅保留指针弹动 */
+/* ========= 以下 JS 与你之前一致，未修改 ========= */
+
+function genUUID(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+    const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+
+firebase.initializeApp({
+  apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
+  authDomain: "cut-demo-e11b9.firebaseapp.com",
+  projectId: "cut-demo-e11b9"
+});
+const db = firebase.firestore();
+
+const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+
+let deviceId = localStorage.getItem("deviceId");
+if(!deviceId){
+  deviceId = genUUID();
+  localStorage.setItem("deviceId", deviceId);
+}
+
+const params = new URLSearchParams(location.search);
+const fromActivityId = params.get("from");
+
+const btnHelp = document.getElementById("btnHelp");
+const btnCreate = document.getElementById("btnCreate");
 const pointer = document.getElementById("pointer");
+
+if(!fromActivityId){
+  btnHelp.disabled = true;
+  btnHelp.innerText = "请分享链接给好友助力";
+}
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const R = 300;
+
+const PRIZES = [
+  {key:"66",label:"66元"},
+  {key:"88",label:"88元"},
+  {key:"388",label:"388元"},
+  {key:"588",label:"588元"},
+  {key:"888",label:"888元"},
+  {key:"1888",label:"1888元"},
+  {key:"iphone",label:"iPhone"}
+];
+
+const STEP = 2*Math.PI / PRIZES.length;
+
+PRIZES.forEach((p,i)=>{
+  ctx.beginPath();
+  ctx.moveTo(R,R);
+  ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
+  ctx.fillStyle = `hsl(${i*40},80%,70%)`;
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(R,R);
+  ctx.rotate(i*STEP+STEP/2);
+  ctx.textAlign="right";
+  ctx.font="bold 30px PingFang SC";
+  ctx.fillStyle="#7c2d12";
+  ctx.fillText(p.label,R-40,10);
+  ctx.restore();
+});
+
 function spinTo(prizeKey){
+  const idx = PRIZES.findIndex(p=>p.key===prizeKey);
+  if(idx<0) return;
+
+  const per = 360 / PRIZES.length;
+  const angle = 360*4 + (360 - (idx*per + per/2));
+
   pointer.classList.remove("bounce");
   void pointer.offsetWidth;
   pointer.classList.add("bounce");
+
+  canvas.style.transform = `rotate(${angle}deg)`;
+}
+
+function watch(activityId){
+  db.collection("activities").doc(activityId).onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const d=snap.data();
+    const p=Number(d.progress||0);
+    document.getElementById("progressInner").style.width=p+"%";
+    document.getElementById("progressText").innerText="完成进度 "+p.toFixed(1)+"%";
+    const prize=PRIZES.find(x=>x.key===d.prizeKey);
+    if(prize) document.getElementById("prizeText").innerText=prize.label;
+  });
+}
+
+btnCreate.onclick = async ()=>{
+  const r = await fetch(CREATE_API,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-device-id":deviceId
+    }
+  });
+  const d = await r.json();
+  if(!d.success){ alert(d.error); return; }
+
+  spinTo(d.prizeKey);
+  watch(d.activityId);
+
+  document.getElementById("shareLink").innerText =
+    location.origin + location.pathname + "?from=" + d.activityId;
+};
+
+btnHelp.onclick = async ()=>{
+  if(btnHelp.disabled) return;
+
+  const r = await fetch(HELP_API,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-device-id":deviceId
+    },
+    body:JSON.stringify({ activityId: fromActivityId })
+  });
+  const d = await r.json();
+
+  if(!d.success){
+    alert(d.error||"你已经助过力了");
+    btnHelp.disabled=true;
+    btnHelp.innerText="已助力";
+    return;
+  }
+
+  btnHelp.disabled=true;
+  btnHelp.innerText="已成功助力 🎉";
+};
+
+if(fromActivityId){
+  watch(fromActivityId);
 }
 </script>
 
 </body>
 </html>
+
 
 
 
