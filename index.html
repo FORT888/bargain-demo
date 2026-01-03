@@ -33,7 +33,6 @@ body{
 }
 .logo{
   width:150px;
-  height:auto;
 }
 
 /* ================= 卡片 ================= */
@@ -46,18 +45,44 @@ body{
 
 /* ================= 主视觉 ================= */
 .hero{
+  position:relative;
   display:flex;
   justify-content:center;
   margin:20px 0 18px;
 }
-.hero-img{
-  width:210px;
-  height:auto;
-  filter:drop-shadow(0 24px 48px rgba(0,0,0,.25));
-  animation:heroIn .6s ease;
+
+/* iPhone 金光光晕 */
+.hero.glow::before{
+  content:"";
+  position:absolute;
+  width:240px;
+  height:240px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle,
+      rgba(255,209,102,.55) 0%,
+      rgba(255,183,3,.35) 40%,
+      rgba(255,183,3,.15) 60%,
+      rgba(255,183,3,0) 75%);
+  filter:blur(6px);
+  animation:glowPulse 2.8s ease-in-out infinite;
 }
 
-@keyframes heroIn{
+@keyframes glowPulse{
+  0%{transform:scale(.95);opacity:.7}
+  50%{transform:scale(1.05);opacity:1}
+  100%{transform:scale(.95);opacity:.7}
+}
+
+.hero-img{
+  width:210px;
+  position:relative;
+  z-index:1;
+  filter:drop-shadow(0 24px 48px rgba(0,0,0,.25));
+  animation:floatIn .6s ease;
+}
+
+@keyframes floatIn{
   from{
     opacity:0;
     transform:translateY(24px) scale(.92);
@@ -97,7 +122,7 @@ body{
 .progress-inner{
   height:100%;
   width:0%;
-  background:#111;
+  background:#E60023;
 }
 .progress-text{
   font-size:12px;
@@ -115,14 +140,22 @@ body{
   font-size:16px;
   margin-top:12px;
 }
+
 .primary{
-  background:#111;
+  background:#E60023;
   color:#fff;
+  font-weight:600;
 }
+
+.primary:active{
+  background:#C8001E;
+}
+
 .secondary{
-  background:#f2f2f2;
-  color:#111;
+  background:#fff5f7;
+  color:#E60023;
 }
+
 .btn:disabled{
   opacity:.5;
 }
@@ -144,14 +177,14 @@ body{
 
   <!-- LOGO -->
   <div class="logo-wrap">
-    <img src="/logo.png" class="logo" alt="logo">
+    <img src="/logo.png" class="logo">
   </div>
 
   <div class="card">
 
     <!-- 主视觉 -->
-    <div class="hero">
-      <img id="prizeImg" class="hero-img" />
+    <div class="hero" id="hero">
+      <img id="prizeImg" class="hero-img">
     </div>
 
     <!-- 文案 -->
@@ -180,7 +213,6 @@ body{
 /* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
-  authDomain: "cut-demo-e11b9.firebaseapp.com",
   projectId: "cut-demo-e11b9"
 });
 const db = firebase.firestore();
@@ -209,6 +241,7 @@ function genUUID(){
 let deviceId = localStorage.deviceId || (localStorage.deviceId=genUUID());
 
 /* ================= DOM ================= */
+const hero = document.getElementById("hero");
 const prizeImg = document.getElementById("prizeImg");
 const resultText = document.getElementById("resultText");
 const progressInner = document.getElementById("progressInner");
@@ -218,9 +251,12 @@ const btnHelp = document.getElementById("btnHelp");
 
 /* ================= 渲染奖品 ================= */
 function renderPrize(prizeKey){
+  hero.classList.remove("glow");
+
   if(prizeKey === "iphone"){
     prizeImg.src = "/iphone.png";
     resultText.innerText = "iPhone 17 Pro Max";
+    hero.classList.add("glow"); // ⭐ 专属金光
   }else{
     prizeImg.src = "/hongbao.png";
     resultText.innerText =
@@ -302,6 +338,7 @@ btnHelp.onclick = async ()=>{
 
 </body>
 </html>
+
 
 
 
