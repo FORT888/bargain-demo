@@ -18,7 +18,6 @@ body{
   background:radial-gradient(circle at top,#fff7ed,#fee2e2);
   font-family:"PingFang SC","Microsoft YaHei",sans-serif;
 }
-
 .card{
   width:92%;
   max-width:420px;
@@ -28,29 +27,21 @@ body{
   text-align:center;
   box-shadow:0 20px 60px rgba(0,0,0,.15);
 }
-
 h1{margin:8px 0}
-
-.prize-box{
-  font-weight:700;
-  margin-bottom:10px;
-}
+.prize-box{font-weight:700;margin-bottom:10px}
 .prize-box span{color:#dc2626}
 
 /* ================= 宝箱 ================= */
-
 .chest-wrap{
   display:flex;
   justify-content:center;
   margin:30px 0 10px;
 }
-
 .chest{
   position:relative;
   width:160px;
   height:120px;
 }
-
 .chest-body{
   position:absolute;
   bottom:0;
@@ -59,7 +50,6 @@ h1{margin:8px 0}
   background:linear-gradient(#fbbf24,#f59e0b);
   border-radius:0 0 18px 18px;
 }
-
 .chest-lid{
   position:absolute;
   top:0;
@@ -70,8 +60,6 @@ h1{margin:8px 0}
   transform-origin:bottom center;
   transition:transform .6s ease;
 }
-
-/* 抖动 */
 @keyframes shake{
   0%{transform:rotate(0)}
   25%{transform:rotate(-6deg)}
@@ -79,18 +67,10 @@ h1{margin:8px 0}
   75%{transform:rotate(-4deg)}
   100%{transform:rotate(0)}
 }
-
-.chest.shake{
-  animation:shake .4s ease;
-}
-
-/* 打开 */
-.chest.open .chest-lid{
-  transform:rotateX(75deg);
-}
+.chest.shake{animation:shake .4s ease;}
+.chest.open .chest-lid{transform:rotateX(75deg);}
 
 /* ================= 结果 ================= */
-
 .result{
   display:none;
   margin-top:16px;
@@ -99,14 +79,12 @@ h1{margin:8px 0}
   color:#dc2626;
   animation:pop .4s ease;
 }
-
 @keyframes pop{
   from{transform:scale(.6);opacity:0}
   to{transform:scale(1);opacity:1}
 }
 
-/* ================= 进度条 ================= */
-
+/* ================= 进度 ================= */
 .progress-bar{
   height:14px;
   background:#fde68a;
@@ -114,20 +92,14 @@ h1{margin:8px 0}
   overflow:hidden;
   margin-top:20px;
 }
-
 .progress-inner{
   height:100%;
   width:0%;
   background:linear-gradient(90deg,#ef4444,#f59e0b);
 }
-
-.progress-text{
-  font-size:13px;
-  margin-top:6px;
-}
+.progress-text{font-size:13px;margin-top:6px}
 
 /* ================= 按钮 ================= */
-
 button{
   width:100%;
   margin-top:12px;
@@ -136,31 +108,14 @@ button{
   border-radius:14px;
   font-size:16px;
 }
-
-.primary{
-  background:#ef4444;
-  color:#fff;
-}
-
-.secondary{
-  background:#fff1f2;
-  color:#ef4444;
-}
-
-button:disabled{
-  opacity:.5;
-}
-
-.link{
-  font-size:12px;
-  margin-top:8px;
-  word-break:break-all;
-}
+.primary{background:#ef4444;color:#fff}
+.secondary{background:#fff1f2;color:#ef4444}
+button:disabled{opacity:.5}
+.link{font-size:12px;margin-top:8px;word-break:break-all}
 </style>
 </head>
 
 <body>
-
 <div class="card">
   <h1>联信资 · 助力抽奖</h1>
 
@@ -193,8 +148,7 @@ button:disabled{
 </div>
 
 <script>
-/* ================= 基础配置 ================= */
-
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   authDomain: "cut-demo-e11b9.firebaseapp.com",
@@ -205,6 +159,7 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
+/* ================= 奖品（已改） ================= */
 const PRIZES = [
   {key:"66",label:"66 元"},
   {key:"88",label:"88 元"},
@@ -212,31 +167,27 @@ const PRIZES = [
   {key:"588",label:"588 元"},
   {key:"888",label:"888 元"},
   {key:"1888",label:"1888 元"},
-  {key:"iphone",label:"iPhone"}
+  {key:"iphone",label:"iPhone 17 Pro Max"}
 ];
 
 /* ================= 设备 ID ================= */
-
 function genUUID(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
     const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
     return v.toString(16);
   });
 }
-
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
   localStorage.setItem("deviceId",deviceId);
 }
 
-/* ================= 页面参数 ================= */
-
+/* ================= 参数 ================= */
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
 /* ================= DOM ================= */
-
 const btnCreate = document.getElementById("btnCreate");
 const btnHelp   = document.getElementById("btnHelp");
 const chest     = document.getElementById("chest");
@@ -244,8 +195,7 @@ const result    = document.getElementById("result");
 const resultText= document.getElementById("resultText");
 const prizeText = document.getElementById("prizeText");
 
-/* ================= 监听进度 ================= */
-
+/* ================= 进度监听 ================= */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
@@ -259,10 +209,38 @@ function watch(activityId){
   });
 }
 
-/* ================= 创建活动 ================= */
+/* ================= 页面加载：恢复状态 ================= */
+window.addEventListener("load", async ()=>{
+  const r = await fetch(CREATE_API,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-device-id":deviceId
+    }
+  });
+  const d = await r.json();
+  if(!d.success || !d.reused) return;
 
+  const prize = PRIZES.find(p=>p.key===d.prizeKey);
+  if(prize){
+    prizeText.innerText = prize.label;
+    resultText.innerText = prize.label;
+    result.style.display="block";
+  }
+
+  chest.classList.add("open");
+  btnCreate.disabled=true;
+  btnCreate.innerText="已发起助力";
+
+  watch(d.activityId);
+
+  document.getElementById("shareLink").innerText =
+    location.origin + location.pathname + "?from=" + d.activityId;
+});
+
+/* ================= 发起助力 ================= */
 btnCreate.onclick = async ()=>{
-  btnCreate.disabled = true;
+  btnCreate.disabled=true;
 
   const r = await fetch(CREATE_API,{
     method:"POST",
@@ -271,16 +249,16 @@ btnCreate.onclick = async ()=>{
       "x-device-id":deviceId
     }
   });
-
   const d = await r.json();
-  if(!d.success){
-    alert(d.error);
-    btnCreate.disabled=false;
+  if(!d.success) return;
+
+  if(d.reused){
+    alert("你已经发起过助力了");
+    watch(d.activityId);
     return;
   }
 
   chest.classList.add("shake");
-
   setTimeout(()=>{
     chest.classList.remove("shake");
     chest.classList.add("open");
@@ -290,14 +268,12 @@ btnCreate.onclick = async ()=>{
     result.style.display="block";
 
     watch(d.activityId);
-
     document.getElementById("shareLink").innerText =
       location.origin + location.pathname + "?from=" + d.activityId;
   },500);
 };
 
 /* ================= 助力 ================= */
-
 if(!fromActivityId){
   btnHelp.disabled=true;
   btnHelp.innerText="请分享链接给好友助力";
@@ -314,7 +290,6 @@ btnHelp.onclick = async ()=>{
     },
     body:JSON.stringify({activityId:fromActivityId})
   });
-
   const d = await r.json();
   if(!d.success){
     alert(d.error||"你已经助过力了");
@@ -322,14 +297,13 @@ btnHelp.onclick = async ()=>{
     btnHelp.innerText="已助力";
     return;
   }
-
   btnHelp.disabled=true;
   btnHelp.innerText="已成功助力 🎉";
 };
 </script>
-
 </body>
 </html>
+
 
 
 
