@@ -41,12 +41,6 @@ body{
   width:160px;
   max-width:70%;
   height:auto;
-  animation:fadeDown .6s ease;
-}
-
-@keyframes fadeDown{
-  from{opacity:0;transform:translateY(-10px)}
-  to{opacity:1;transform:none}
 }
 
 /* ================= 标题 ================= */
@@ -101,6 +95,7 @@ h1{
   opacity:0;
   pointer-events:none;
   transition:all .5s cubic-bezier(.2,.8,.2,1);
+  z-index:10;
 }
 
 .prize-pop.show{
@@ -171,7 +166,7 @@ button:disabled{opacity:.5}
 
   <!-- Logo -->
   <div class="logo-wrap">
-    <img src="images/logo.png" class="logo">
+    <img src="/logo.png" class="logo" alt="logo">
   </div>
 
   <h1>联信资 · 助力抽奖</h1>
@@ -184,7 +179,7 @@ button:disabled{opacity:.5}
     </div>
 
     <div class="prize-pop" id="prizePop">
-      <img id="prizeImg">
+      <img id="prizeImg" alt="prize">
     </div>
   </div>
 
@@ -257,9 +252,13 @@ function renderPrize(prizeKey){
     result.style.display="block";
   }
 
+  prizeImg.onerror = () => {
+    console.error("图片加载失败：", prizeImg.src);
+  };
+
   prizeImg.src = prizeKey === "iphone"
-    ? "images/iphone.png"
-    : "images/hongbao.png";
+    ? "/iphone.png"
+    : "/hongbao.png";
 
   prizePop.classList.add("show");
 }
@@ -341,6 +340,7 @@ btnHelp.onclick = async ()=>{
 
 </body>
 </html>
+
 
 
 
