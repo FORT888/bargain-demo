@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-<title>联信资 · 助力转盘</title>
+<title>联信资 · 助力抽奖</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -18,6 +18,7 @@ body{
   background:radial-gradient(circle at top,#fff7ed,#fee2e2);
   font-family:"PingFang SC","Microsoft YaHei",sans-serif;
 }
+
 .card{
   width:92%;
   max-width:420px;
@@ -27,112 +28,128 @@ body{
   text-align:center;
   box-shadow:0 20px 60px rgba(0,0,0,.15);
 }
+
 h1{margin:8px 0}
-.prize-box{font-weight:700;margin-bottom:10px}
+
+.prize-box{
+  font-weight:700;
+  margin-bottom:10px;
+}
 .prize-box span{color:#dc2626}
 
-/* ================= 转盘 ================= */
-.wheel-wrap{
+/* ================= 宝箱 ================= */
+
+.chest-wrap{
+  display:flex;
+  justify-content:center;
+  margin:30px 0 10px;
+}
+
+.chest{
   position:relative;
-  width:300px;
-  height:300px;
-  margin:0 auto;
-}
-
-/* ================= 中心指针（唯一修改区域） ================= */
-.pointer-center{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:0;
-  height:0;
-  z-index:12;
-  pointer-events:none;
-}
-
-/* 指针杆：从中心向外 */
-.pointer-arm{
-  position:absolute;
-  left:-2px;
-  bottom:0;
-  width:4px;
-  height:92px;              /* 指针长度（刚好到外圈） */
-  background:#e11d48;
-  border-radius:2px;
-  transform-origin:bottom center;
-}
-
-/* 指针头：小三角 */
-.pointer-head{
-  position:absolute;
-  left:-7px;
-  bottom:92px;
-  width:0;
-  height:0;
-  border-left:7px solid transparent;
-  border-right:7px solid transparent;
-  border-bottom:12px solid #e11d48;
-}
-
-/* 指针弹动（围绕中心轻微摆动） */
-@keyframes centerPointerBounce{
-  0%   { transform:translate(-50%,-50%) rotate(0deg); }
-  40%  { transform:translate(-50%,-50%) rotate(-6deg); }
-  70%  { transform:translate(-50%,-50%) rotate(3deg); }
-  100% { transform:translate(-50%,-50%) rotate(0deg); }
-}
-.pointer-center.bounce{
-  animation:centerPointerBounce .4s ease-out;
-}
-/* ================= 指针结束 ================= */
-
-/* 转盘 */
-#wheel{
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  transition:transform 3.6s cubic-bezier(.25,.9,.25,1);
-}
-
-/* 中心 LOGO */
-.center-logo{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:120px;
+  width:160px;
   height:120px;
-  border-radius:50%;
-  pointer-events:none;
-  z-index:4;
+}
+
+.chest-body{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:80px;
+  background:linear-gradient(#fbbf24,#f59e0b);
+  border-radius:0 0 18px 18px;
+}
+
+.chest-lid{
+  position:absolute;
+  top:0;
+  width:100%;
+  height:48px;
+  background:linear-gradient(#fde68a,#fbbf24);
+  border-radius:18px 18px 10px 10px;
+  transform-origin:bottom center;
+  transition:transform .6s ease;
+}
+
+/* 抖动 */
+@keyframes shake{
+  0%{transform:rotate(0)}
+  25%{transform:rotate(-6deg)}
+  50%{transform:rotate(6deg)}
+  75%{transform:rotate(-4deg)}
+  100%{transform:rotate(0)}
+}
+
+.chest.shake{
+  animation:shake .4s ease;
+}
+
+/* 打开 */
+.chest.open .chest-lid{
+  transform:rotateX(75deg);
+}
+
+/* ================= 结果 ================= */
+
+.result{
+  display:none;
+  margin-top:16px;
+  font-size:22px;
+  font-weight:800;
+  color:#dc2626;
+  animation:pop .4s ease;
+}
+
+@keyframes pop{
+  from{transform:scale(.6);opacity:0}
+  to{transform:scale(1);opacity:1}
 }
 
 /* ================= 进度条 ================= */
+
 .progress-bar{
   height:14px;
   background:#fde68a;
   border-radius:999px;
   overflow:hidden;
+  margin-top:20px;
 }
+
 .progress-inner{
   height:100%;
   width:0%;
   background:linear-gradient(90deg,#ef4444,#f59e0b);
 }
-.progress-text{font-size:13px;margin-top:6px}
+
+.progress-text{
+  font-size:13px;
+  margin-top:6px;
+}
+
+/* ================= 按钮 ================= */
 
 button{
   width:100%;
-  margin-top:10px;
+  margin-top:12px;
   padding:14px;
   border:none;
   border-radius:14px;
   font-size:16px;
 }
-.primary{background:#ef4444;color:#fff}
-.secondary{background:#fff1f2;color:#ef4444}
-button:disabled{opacity:.5}
+
+.primary{
+  background:#ef4444;
+  color:#fff;
+}
+
+.secondary{
+  background:#fff1f2;
+  color:#ef4444;
+}
+
+button:disabled{
+  opacity:.5;
+}
 
 .link{
   font-size:12px;
@@ -145,23 +162,25 @@ button:disabled{opacity:.5}
 <body>
 
 <div class="card">
-  <h1>联信资 · 助力转盘</h1>
-  <div class="prize-box">奖品：<span id="prizeText">未确定</span></div>
+  <h1>联信资 · 助力抽奖</h1>
 
-  <div class="wheel-wrap">
-    <!-- 中心指针（结构只在这里变） -->
-    <div class="pointer-center" id="pointer">
-      <div class="pointer-arm"></div>
-      <div class="pointer-head"></div>
-    </div>
-
-    <!-- 转盘 -->
-    <canvas id="wheel" width="600" height="600"></canvas>
-
-    <!-- 中心 LOGO -->
-    <img src="logo.png" class="center-logo">
+  <div class="prize-box">
+    奖品：<span id="prizeText">未确定</span>
   </div>
 
+  <!-- 宝箱 -->
+  <div class="chest-wrap">
+    <div class="chest" id="chest">
+      <div class="chest-lid"></div>
+      <div class="chest-body"></div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    🎉 恭喜获得：<span id="resultText"></span>
+  </div>
+
+  <!-- 进度 -->
   <div class="progress-bar">
     <div class="progress-inner" id="progressInner"></div>
   </div>
@@ -174,14 +193,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ========= 以下 JS 与你之前一致，未修改 ========= */
-
-function genUUID(){
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
-    const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
-    return v.toString(16);
-  });
-}
+/* ================= 基础配置 ================= */
 
 firebase.initializeApp({
   apiKey: "AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
@@ -193,84 +205,65 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
+const PRIZES = [
+  {key:"66",label:"66 元"},
+  {key:"88",label:"88 元"},
+  {key:"388",label:"388 元"},
+  {key:"588",label:"588 元"},
+  {key:"888",label:"888 元"},
+  {key:"1888",label:"1888 元"},
+  {key:"iphone",label:"iPhone"}
+];
+
+/* ================= 设备 ID ================= */
+
+function genUUID(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+    const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = genUUID();
-  localStorage.setItem("deviceId", deviceId);
+  localStorage.setItem("deviceId",deviceId);
 }
+
+/* ================= 页面参数 ================= */
 
 const params = new URLSearchParams(location.search);
 const fromActivityId = params.get("from");
 
-const btnHelp = document.getElementById("btnHelp");
+/* ================= DOM ================= */
+
 const btnCreate = document.getElementById("btnCreate");
-const pointer = document.getElementById("pointer");
+const btnHelp   = document.getElementById("btnHelp");
+const chest     = document.getElementById("chest");
+const result    = document.getElementById("result");
+const resultText= document.getElementById("resultText");
+const prizeText = document.getElementById("prizeText");
 
-if(!fromActivityId){
-  btnHelp.disabled = true;
-  btnHelp.innerText = "请分享链接给好友助力";
-}
-
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-const R = 300;
-
-const PRIZES = [
-  {key:"66",label:"66元"},
-  {key:"88",label:"88元"},
-  {key:"388",label:"388元"},
-  {key:"588",label:"588元"},
-  {key:"888",label:"888元"},
-  {key:"1888",label:"1888元"},
-  {key:"iphone",label:"iPhone"}
-];
-
-const STEP = 2*Math.PI / PRIZES.length;
-
-PRIZES.forEach((p,i)=>{
-  ctx.beginPath();
-  ctx.moveTo(R,R);
-  ctx.arc(R,R,R,i*STEP,(i+1)*STEP);
-  ctx.fillStyle = `hsl(${i*40},80%,70%)`;
-  ctx.fill();
-
-  ctx.save();
-  ctx.translate(R,R);
-  ctx.rotate(i*STEP+STEP/2);
-  ctx.textAlign="right";
-  ctx.font="bold 30px PingFang SC";
-  ctx.fillStyle="#7c2d12";
-  ctx.fillText(p.label,R-40,10);
-  ctx.restore();
-});
-
-function spinTo(prizeKey){
-  const idx = PRIZES.findIndex(p=>p.key===prizeKey);
-  if(idx<0) return;
-
-  const per = 360 / PRIZES.length;
-  const angle = 360*4 + (360 - (idx*per + per/2));
-
-  pointer.classList.remove("bounce");
-  void pointer.offsetWidth;
-  pointer.classList.add("bounce");
-
-  canvas.style.transform = `rotate(${angle}deg)`;
-}
+/* ================= 监听进度 ================= */
 
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
-    const d=snap.data();
-    const p=Number(d.progress||0);
-    document.getElementById("progressInner").style.width=p+"%";
-    document.getElementById("progressText").innerText="完成进度 "+p.toFixed(1)+"%";
-    const prize=PRIZES.find(x=>x.key===d.prizeKey);
-    if(prize) document.getElementById("prizeText").innerText=prize.label;
+    const d = snap.data();
+    document.getElementById("progressInner").style.width = (d.progress||0)+"%";
+    document.getElementById("progressText").innerText =
+      "完成进度 "+(d.progress||0).toFixed(1)+"%";
+
+    const prize = PRIZES.find(p=>p.key===d.prizeKey);
+    if(prize) prizeText.innerText = prize.label;
   });
 }
 
+/* ================= 创建活动 ================= */
+
 btnCreate.onclick = async ()=>{
+  btnCreate.disabled = true;
+
   const r = await fetch(CREATE_API,{
     method:"POST",
     headers:{
@@ -278,29 +271,51 @@ btnCreate.onclick = async ()=>{
       "x-device-id":deviceId
     }
   });
+
   const d = await r.json();
-  if(!d.success){ alert(d.error); return; }
+  if(!d.success){
+    alert(d.error);
+    btnCreate.disabled=false;
+    return;
+  }
 
-  spinTo(d.prizeKey);
-  watch(d.activityId);
+  chest.classList.add("shake");
 
-  document.getElementById("shareLink").innerText =
-    location.origin + location.pathname + "?from=" + d.activityId;
+  setTimeout(()=>{
+    chest.classList.remove("shake");
+    chest.classList.add("open");
+
+    const prize = PRIZES.find(p=>p.key===d.prizeKey);
+    resultText.innerText = prize ? prize.label : d.prizeKey;
+    result.style.display="block";
+
+    watch(d.activityId);
+
+    document.getElementById("shareLink").innerText =
+      location.origin + location.pathname + "?from=" + d.activityId;
+  },500);
 };
 
-btnHelp.onclick = async ()=>{
-  if(btnHelp.disabled) return;
+/* ================= 助力 ================= */
 
+if(!fromActivityId){
+  btnHelp.disabled=true;
+  btnHelp.innerText="请分享链接给好友助力";
+}else{
+  watch(fromActivityId);
+}
+
+btnHelp.onclick = async ()=>{
   const r = await fetch(HELP_API,{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       "x-device-id":deviceId
     },
-    body:JSON.stringify({ activityId: fromActivityId })
+    body:JSON.stringify({activityId:fromActivityId})
   });
-  const d = await r.json();
 
+  const d = await r.json();
   if(!d.success){
     alert(d.error||"你已经助过力了");
     btnHelp.disabled=true;
@@ -311,14 +326,11 @@ btnHelp.onclick = async ()=>{
   btnHelp.disabled=true;
   btnHelp.innerText="已成功助力 🎉";
 };
-
-if(fromActivityId){
-  watch(fromActivityId);
-}
 </script>
 
 </body>
 </html>
+
 
 
 
