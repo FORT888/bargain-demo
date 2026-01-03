@@ -20,14 +20,14 @@ body{
 .container{
   width:100%;
   max-width:420px;
-  padding:22px 16px 40px;
+  padding:20px 16px 40px;
 }
 
-/* logo */
+/* LOGO（放大） */
 .logo{
   display:block;
-  margin:0 auto 8px;
-  width:70px;
+  margin:0 auto 10px;
+  width:96px;
 }
 
 /* 标题 */
@@ -35,7 +35,6 @@ body{
   text-align:center;
   font-size:36px;
   font-weight:800;
-  letter-spacing:2px;
 }
 .subtitle{
   text-align:center;
@@ -48,92 +47,93 @@ body{
 /* 卡片 */
 .card{
   background:#fff;
-  border-radius:24px;
-  padding:28px 20px 30px;
-  margin-top:20px;
-  box-shadow:0 25px 60px rgba(0,0,0,.12);
+  border-radius:26px;
+  padding:28px 20px 32px;
+  margin-top:18px;
+  box-shadow:0 28px 60px rgba(0,0,0,.12);
 }
 
 /* 抽奖圆 */
 .hero{
   display:flex;
   justify-content:center;
-  margin:26px 0 20px;
+  margin:26px 0 22px;
 }
 .circle{
-  width:240px;
-  height:240px;
+  width:260px;
+  height:260px;
   border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, #ffffff, #eaeaea);
-  box-shadow:inset 0 0 30px rgba(0,0,0,.06),
-             0 20px 45px rgba(0,0,0,.18);
+  background:radial-gradient(circle at 30% 30%, #fff, #ececec);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.06),
+             0 22px 48px rgba(0,0,0,.18);
   position:relative;
   overflow:hidden;
 }
 
-/* 百分比文字 */
-.progress-text{
-  position:absolute;
-  top:18px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:14px;
-  font-weight:600;
-  color:#e60023;
-  z-index:5;
-}
-
-/* 圆内进度条 */
-.circle-progress{
+/* 进度条（宽 + 高级） */
+.progress-wrap{
   position:absolute;
   bottom:22px;
   left:50%;
   transform:translateX(-50%);
-  width:160px;
-  height:8px;
-  background:#ddd;
+  width:190px;
+  height:12px;
+  background:linear-gradient(180deg,#eee,#ddd);
   border-radius:999px;
   overflow:hidden;
-  z-index:4;
+  z-index:5;
 }
-.circle-progress-inner{
+.progress-inner{
   height:100%;
   width:0%;
-  background:#e60023;
+  background:linear-gradient(90deg,#ff2d55,#ff9500);
+  border-radius:999px;
+}
+.progress-text{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:600;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+  z-index:6;
 }
 
-/* 轮播掉落图片（更大 + 更慢） */
+/* 轮播图片 */
 .prize-item{
   position:absolute;
-  top:-90px;
+  top:-100px;
   left:50%;
   transform:translateX(-50%);
-  width:110px;                 /* 放大 */
+  width:120px;
   opacity:0;
-  animation:drop 2.6s ease-in-out forwards; /* 更慢 */
-  z-index:2;
+  animation:drop 2.8s ease-in-out forwards;
+  z-index:3;
 }
 
-/* 最终停留图片（更大） */
+/* 最终停留 */
 .prize-final{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:140px;                /* 再大一档 */
-  z-index:6;
+  width:150px;
+  z-index:7;
 }
 
 @keyframes drop{
   0%{
-    transform:translate(-50%,-90px) scale(.92);
+    transform:translate(-50%,-100px) scale(.92);
     opacity:0;
   }
   35%{
     opacity:1;
   }
   100%{
-    transform:translate(-50%,110px) scale(1);
+    transform:translate(-50%,120px) scale(1);
     opacity:0;
   }
 }
@@ -145,7 +145,7 @@ button{
   border:none;
   border-radius:16px;
   font-size:16px;
-  margin-top:12px;
+  margin-top:14px;
 }
 .primary{
   background:#e60023;
@@ -180,9 +180,9 @@ button:disabled{opacity:.5}
 
     <div class="hero">
       <div class="circle" id="circle">
-        <div class="progress-text" id="progressText">完成进度 0%</div>
-        <div class="circle-progress">
-          <div class="circle-progress-inner" id="progressInner"></div>
+        <div class="progress-wrap">
+          <div class="progress-inner" id="progressInner"></div>
+          <div class="progress-text" id="progressText">0%</div>
         </div>
       </div>
     </div>
@@ -201,10 +201,11 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
-const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
+const CREATE_API="https://createactivity-23p22ouguq-uc.a.run.app";
+const HELP_API="https://helpactivity-23p22ouguq-uc.a.run.app";
 
-const PRIZE_IMG = {
+/* 奖品图片映射 */
+const PRIZE_IMG={
   "1888":"/1888.png",
   "588":"/588.png",
   "888":"/888.png",
@@ -212,13 +213,17 @@ const PRIZE_IMG = {
   "88":"/hongbao.png",
   "388":"/hongbao.png",
   "iphone":"/iphone.png",
+  "shouji":"/shouji.png",
   "rice":"/dami.png",
-  "oil":"/you.png",
-  "shouji":"/shouji.png"
+  "oil":"/you.png"
 };
 
-const CAROUSEL = [
-  "1888","588","888","66","88","388","rice","oil","iphone"
+/* 真正的轮播顺序（所有奖品，一个不漏） */
+const CAROUSEL=[
+  "1888","588","888",
+  "66","88","388",
+  "rice","oil",
+  "shouji","iphone"
 ];
 
 function genUUID(){
@@ -227,31 +232,31 @@ function genUUID(){
     return v.toString(16);
   });
 }
-let deviceId = localStorage.deviceId || (localStorage.deviceId=genUUID());
+let deviceId=localStorage.deviceId||(localStorage.deviceId=genUUID());
 
-const circle = document.getElementById("circle");
-const progressInner = document.getElementById("progressInner");
-const progressText = document.getElementById("progressText");
-const btnCreate = document.getElementById("btnCreate");
-const btnHelp = document.getElementById("btnHelp");
-const shareLink = document.getElementById("shareLink");
+const circle=document.getElementById("circle");
+const progressInner=document.getElementById("progressInner");
+const progressText=document.getElementById("progressText");
+const btnCreate=document.getElementById("btnCreate");
+const btnHelp=document.getElementById("btnHelp");
+const shareLink=document.getElementById("shareLink");
 
-let carouselTimer=null;
+let timer=null;
 
 function playCarousel(finalKey){
   let index=0, rounds=0;
   const maxRounds=3;
-  const interval=900;   // 更慢的轮播节奏
+  const interval=1000; // 慢速轮播
 
   circle.querySelectorAll(".prize-item,.prize-final").forEach(el=>el.remove());
-  clearInterval(carouselTimer);
+  clearInterval(timer);
 
-  carouselTimer=setInterval(()=>{
+  timer=setInterval(()=>{
     const img=document.createElement("img");
-    img.src=PRIZE_IMG[CAROUSEL[index]]||"/hongbao.png";
+    img.src=PRIZE_IMG[CAROUSEL[index]];
     img.className="prize-item";
     circle.appendChild(img);
-    setTimeout(()=>img.remove(),2600);
+    setTimeout(()=>img.remove(),2800);
 
     index++;
     if(index>=CAROUSEL.length){
@@ -259,13 +264,13 @@ function playCarousel(finalKey){
       rounds++;
     }
     if(rounds>=maxRounds){
-      clearInterval(carouselTimer);
+      clearInterval(timer);
       setTimeout(()=>{
         const finalImg=document.createElement("img");
-        finalImg.src=PRIZE_IMG[finalKey]||"/hongbao.png";
+        finalImg.src=PRIZE_IMG[finalKey];
         finalImg.className="prize-final";
         circle.appendChild(finalImg);
-      },1200);
+      },1400);
     }
   },interval);
 }
@@ -273,9 +278,9 @@ function playCarousel(finalKey){
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
-    const p = snap.data().progress || 0;
-    progressInner.style.width = p + "%";
-    progressText.innerText = "完成进度 " + p.toFixed(1) + "%";
+    const p=snap.data().progress||0;
+    progressInner.style.width=p+"%";
+    progressText.innerText=p.toFixed(1)+"%";
   });
 }
 
@@ -334,6 +339,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
