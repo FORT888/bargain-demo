@@ -20,112 +20,105 @@ body{
 .container{
   width:100%;
   max-width:420px;
-  padding:24px 18px 44px;
+  padding:22px 18px 44px;
 }
 
-/* ===== 顶部品牌 ===== */
+/* ===== 头部品牌（重做） ===== */
 .brand{
+  text-align:center;
+  margin-bottom:14px;
+}
+.brand-logo{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  margin:0 auto 10px;
+  background:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:12px;
-  margin-bottom:18px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
 }
-.brand img{
-  width:88px;              /* logo 放大 */
-  height:auto;
+.brand-logo img{
+  width:42px;
 }
-.brand-text{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-}
-.brand-text .title{
-  font-size:36px;
+.brand-title{
+  font-size:34px;
   font-weight:900;
-  letter-spacing:1px;
 }
-.brand-text .subtitle{
-  font-size:16px;
+.brand-subtitle{
+  font-size:14px;
   margin-top:4px;
-  color:#666;
+  color:#777;
   letter-spacing:6px;
 }
 
 /* ===== 卡片 ===== */
 .card{
-  background:rgba(255,255,255,.92);
+  background:rgba(255,255,255,.94);
   backdrop-filter:blur(6px);
-  border-radius:28px;
-  padding:30px 22px 36px;
-  box-shadow:
-    0 30px 60px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.6);
+  border-radius:26px;
+  padding:28px 22px 36px;
+  margin-top:18px;
+  box-shadow:0 28px 60px rgba(0,0,0,.12);
 }
 
-/* ===== 抽奖区域 ===== */
+/* ===== 抽奖圆 ===== */
 .hero{
   display:flex;
   justify-content:center;
-  margin:28px 0 26px;
+  margin:26px 0 22px;
 }
 .circle{
-  width:270px;
-  height:270px;
+  width:260px;
+  height:260px;
   border-radius:50%;
   background:
     radial-gradient(circle at 30% 30%, #ffffff, #ededed);
   box-shadow:
-    inset 0 0 45px rgba(255,255,255,.8),
-    inset 0 0 20px rgba(0,0,0,.04),
-    0 25px 55px rgba(0,0,0,.18);
+    inset 0 0 45px rgba(255,255,255,.9),
+    inset 0 0 18px rgba(0,0,0,.04),
+    0 22px 48px rgba(0,0,0,.18);
   position:relative;
   overflow:hidden;
 }
 
-/* ===== 进度 ===== */
+/* ===== 进度（重做） ===== */
 .progress-title{
   position:absolute;
-  bottom:66px;
+  bottom:54px;
   left:50%;
   transform:translateX(-50%);
-  font-size:13px;
+  font-size:12px;
   font-weight:600;
-  color:#333;
-  z-index:6;
+  color:#666;
 }
 
 .progress-wrap{
   position:absolute;
-  bottom:36px;
+  bottom:34px;
   left:50%;
   transform:translateX(-50%);
-  width:240px;                 /* 更宽 */
-  height:14px;
-  background:#2a2a2a;           /* 未完成黑灰 */
+  width:200px;
+  height:6px;                     /* 变细 */
+  background:#e6e6e6;             /* 浅灰 */
   border-radius:999px;
   overflow:hidden;
-  z-index:5;
 }
-
 .progress-inner{
   height:100%;
   width:0%;
-  background:linear-gradient(90deg,#ff3b30,#ff9500);
+  background:#e60023;             /* 红色高亮 */
   border-radius:999px;
 }
-
 .progress-text{
   position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
   font-size:12px;
-  font-weight:700;
-  color:#fff;
-  text-shadow:0 1px 2px rgba(0,0,0,.4);
-  z-index:6;
+  font-weight:600;
+  color:#e60023;
 }
 
 /* ===== 轮播图片 ===== */
@@ -137,30 +130,19 @@ body{
   width:130px;
   opacity:0;
   animation:drop 3s ease-in-out forwards;
-  z-index:3;
 }
-
 .prize-final{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
   width:165px;
-  z-index:8;
 }
 
 @keyframes drop{
-  0%{
-    transform:translate(-50%,-110px) scale(.92);
-    opacity:0;
-  }
-  35%{
-    opacity:1;
-  }
-  100%{
-    transform:translate(-50%,135px) scale(1);
-    opacity:0;
-  }
+  0%{transform:translate(-50%,-110px) scale(.92);opacity:0}
+  35%{opacity:1}
+  100%{transform:translate(-50%,135px) scale(1);opacity:0}
 }
 
 /* ===== 按钮 ===== */
@@ -197,27 +179,24 @@ button:disabled{opacity:.5}
 <body>
 <div class="container">
 
-  <!-- 顶部品牌 -->
+  <!-- 新头部 -->
   <div class="brand">
-    <img src="/logo.png">
-    <div class="brand-text">
-      <div class="title">联信资</div>
-      <div class="subtitle">助力抽奖</div>
+    <div class="brand-logo">
+      <img src="/logo.png">
     </div>
+    <div class="brand-title">联信资</div>
+    <div class="brand-subtitle">助力抽奖</div>
   </div>
 
   <div class="card">
 
     <div class="hero">
       <div class="circle" id="circle">
-
         <div class="progress-title">完成进度</div>
-
         <div class="progress-wrap">
           <div class="progress-inner" id="progressInner"></div>
-          <div class="progress-text" id="progressText">0%</div>
         </div>
-
+        <div class="progress-text" id="progressText">0%</div>
       </div>
     </div>
 
@@ -229,7 +208,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-/* ===== Firebase & 业务逻辑（完全未改） ===== */
+/* ===== 下面逻辑与你之前完全一致，未动 ===== */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   projectId:"cut-demo-e11b9"
@@ -246,9 +225,7 @@ const PRIZE_IMG={
   "rice":"/dami.png","oil":"/you.png"
 };
 
-const CAROUSEL=[
-  "1888","588","888","66","88","388","rice","oil","shouji","iphone"
-];
+const CAROUSEL=["1888","588","888","66","88","388","rice","oil","shouji","iphone"];
 
 function genUUID(){
   return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
@@ -352,6 +329,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
