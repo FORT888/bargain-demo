@@ -17,49 +17,68 @@ body{
   display:flex;
   justify-content:center;
 }
+
+/* ===== 页面高亮效果 ===== */
+.page{
+  position:relative;
+}
+.page.highlight::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:radial-gradient(
+    circle at center,
+    rgba(255,255,255,.75),
+    rgba(255,255,255,.35),
+    rgba(255,255,255,0)
+  );
+  animation:flash .6s ease-out forwards;
+  pointer-events:none;
+  z-index:999;
+}
+@keyframes flash{
+  from{opacity:1}
+  to{opacity:0}
+}
+
 .container{
   width:100%;
   max-width:420px;
   padding:22px 18px 44px;
 }
 
-/* ===== 头部品牌（重做） ===== */
+/* ===== 品牌头部 ===== */
 .brand{
-  text-align:center;
-  margin-bottom:14px;
-}
-.brand-logo{
-  width:64px;
-  height:64px;
-  border-radius:50%;
-  margin:0 auto 10px;
-  background:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  gap:14px;
+  margin:8px 0 18px;
 }
-.brand-logo img{
-  width:42px;
+.brand-logo{
+  width:72px;
+}
+.brand-text{
+  display:flex;
+  flex-direction:column;
 }
 .brand-title{
-  font-size:34px;
+  font-size:38px;
   font-weight:900;
+  letter-spacing:2px;
 }
 .brand-subtitle{
-  font-size:14px;
-  margin-top:4px;
-  color:#777;
+  font-size:16px;
+  margin-top:6px;
+  color:#666;
   letter-spacing:6px;
 }
 
 /* ===== 卡片 ===== */
 .card{
   background:rgba(255,255,255,.94);
-  backdrop-filter:blur(6px);
   border-radius:26px;
   padding:28px 22px 36px;
-  margin-top:18px;
   box-shadow:0 28px 60px rgba(0,0,0,.12);
 }
 
@@ -73,8 +92,7 @@ body{
   width:260px;
   height:260px;
   border-radius:50%;
-  background:
-    radial-gradient(circle at 30% 30%, #ffffff, #ededed);
+  background:radial-gradient(circle at 30% 30%, #fff, #ededed);
   box-shadow:
     inset 0 0 45px rgba(255,255,255,.9),
     inset 0 0 18px rgba(0,0,0,.04),
@@ -83,37 +101,33 @@ body{
   overflow:hidden;
 }
 
-/* ===== 进度（重做） ===== */
+/* ===== 进度 ===== */
 .progress-title{
   position:absolute;
   bottom:54px;
   left:50%;
   transform:translateX(-50%);
   font-size:12px;
-  font-weight:600;
   color:#666;
 }
-
 .progress-wrap{
   position:absolute;
   bottom:34px;
   left:50%;
   transform:translateX(-50%);
   width:200px;
-  height:6px;                     /* 变细 */
-  background:#e6e6e6;             /* 浅灰 */
+  height:6px;
+  background:#e6e6e6;
   border-radius:999px;
-  overflow:hidden;
 }
 .progress-inner{
   height:100%;
   width:0%;
-  background:#e60023;             /* 红色高亮 */
-  border-radius:999px;
+  background:#e60023;
 }
 .progress-text{
   position:absolute;
-  bottom:20px;
+  bottom:18px;
   left:50%;
   transform:translateX(-50%);
   font-size:12px;
@@ -162,7 +176,6 @@ button{
 .secondary{
   background:#fff1f3;
   color:#e60023;
-  font-weight:600;
 }
 button:disabled{opacity:.5}
 
@@ -171,44 +184,43 @@ button:disabled{opacity:.5}
   font-size:12px;
   color:#999;
   text-align:center;
-  word-break:break-all;
 }
 </style>
 </head>
 
 <body>
-<div class="container">
+<div class="page" id="page">
+  <div class="container">
 
-  <!-- 新头部 -->
-  <div class="brand">
-    <div class="brand-logo">
-      <img src="/logo.png">
-    </div>
-    <div class="brand-title">联信资</div>
-    <div class="brand-subtitle">助力抽奖</div>
-  </div>
-
-  <div class="card">
-
-    <div class="hero">
-      <div class="circle" id="circle">
-        <div class="progress-title">完成进度</div>
-        <div class="progress-wrap">
-          <div class="progress-inner" id="progressInner"></div>
-        </div>
-        <div class="progress-text" id="progressText">0%</div>
+    <div class="brand">
+      <img src="/logo.png" class="brand-logo">
+      <div class="brand-text">
+        <div class="brand-title">联信资</div>
+        <div class="brand-subtitle">助力抽奖</div>
       </div>
     </div>
 
-    <button id="btnHelp" class="secondary">帮助好友助力</button>
-    <button id="btnCreate" class="primary">发起助力试试</button>
+    <div class="card">
+      <div class="hero">
+        <div class="circle" id="circle">
+          <div class="progress-title">完成进度</div>
+          <div class="progress-wrap">
+            <div class="progress-inner" id="progressInner"></div>
+          </div>
+          <div class="progress-text" id="progressText">0%</div>
+        </div>
+      </div>
 
-    <div class="link" id="shareLink"></div>
+      <button id="btnHelp" class="secondary">帮助好友助力</button>
+      <button id="btnCreate" class="primary">发起助力试试</button>
+
+      <div class="link" id="shareLink"></div>
+    </div>
   </div>
 </div>
 
 <script>
-/* ===== 下面逻辑与你之前完全一致，未动 ===== */
+/* ===== 逻辑保持不变，只加“高亮判断” ===== */
 firebase.initializeApp({
   apiKey:"AIzaSyA_GeAMtgqYBLG9z_EX529fVzmGYZbZl0Y",
   projectId:"cut-demo-e11b9"
@@ -224,7 +236,6 @@ const PRIZE_IMG={
   "iphone":"/iphone.png","shouji":"/shouji.png",
   "rice":"/dami.png","oil":"/you.png"
 };
-
 const CAROUSEL=["1888","588","888","66","88","388","rice","oil","shouji","iphone"];
 
 function genUUID(){
@@ -235,6 +246,7 @@ function genUUID(){
 }
 let deviceId=localStorage.deviceId||(localStorage.deviceId=genUUID());
 
+const page=document.getElementById("page");
 const circle=document.getElementById("circle");
 const progressInner=document.getElementById("progressInner");
 const progressText=document.getElementById("progressText");
@@ -243,6 +255,13 @@ const btnHelp=document.getElementById("btnHelp");
 const shareLink=document.getElementById("shareLink");
 
 let timer=null;
+
+function highlightIfBigPrize(key){
+  if(key==="iphone"||key==="1888"){
+    page.classList.add("highlight");
+    setTimeout(()=>page.classList.remove("highlight"),600);
+  }
+}
 
 function playCarousel(finalKey){
   let index=0,rounds=0;
@@ -267,6 +286,7 @@ function playCarousel(finalKey){
         finalImg.src=PRIZE_IMG[finalKey];
         finalImg.className="prize-final";
         circle.appendChild(finalImg);
+        highlightIfBigPrize(finalKey);   // ⭐ 高亮触发
       },1500);
     }
   },interval);
@@ -329,6 +349,7 @@ btnHelp.onclick=async()=>{
 
 </body>
 </html>
+
 
 
 
