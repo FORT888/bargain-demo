@@ -12,7 +12,7 @@
 body{
   margin:0;
   min-height:100vh;
-  background:#f6f6f6;
+  background:#f5f5f7;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC";
   display:flex;
   justify-content:center;
@@ -20,20 +20,20 @@ body{
 .container{
   width:100%;
   max-width:420px;
-  padding:24px 16px 40px;
+  padding:22px 16px 40px;
 }
 
 /* logo */
 .logo{
   display:block;
-  margin:0 auto 10px;
+  margin:0 auto 8px;
   width:70px;
 }
 
 /* 标题 */
 .title{
   text-align:center;
-  font-size:34px;
+  font-size:36px;
   font-weight:800;
   letter-spacing:2px;
 }
@@ -48,40 +48,41 @@ body{
 /* 卡片 */
 .card{
   background:#fff;
-  border-radius:22px;
-  padding:26px 20px 28px;
+  border-radius:24px;
+  padding:28px 20px 30px;
   margin-top:20px;
-  box-shadow:0 20px 50px rgba(0,0,0,.1);
+  box-shadow:0 25px 60px rgba(0,0,0,.12);
 }
 
-/* 中央圆 */
+/* 抽奖圆 */
 .hero{
-  position:relative;
   display:flex;
   justify-content:center;
-  margin:20px 0 16px;
+  margin:26px 0 20px;
 }
 .circle{
-  width:220px;
-  height:220px;
+  width:240px;
+  height:240px;
   border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, #fff, #eaeaea);
-  box-shadow:0 16px 36px rgba(0,0,0,.18);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  background:radial-gradient(circle at 30% 30%, #ffffff, #eaeaea);
+  box-shadow:inset 0 0 30px rgba(0,0,0,.06),
+             0 20px 45px rgba(0,0,0,.18);
   position:relative;
+  overflow:hidden;
 }
 
 /* 圆内进度条 */
 .circle-progress{
   position:absolute;
-  bottom:20px;
-  width:140px;
+  bottom:22px;
+  left:50%;
+  transform:translateX(-50%);
+  width:150px;
   height:6px;
   background:#ddd;
   border-radius:999px;
   overflow:hidden;
+  z-index:3;
 }
 .circle-progress-inner{
   height:100%;
@@ -89,26 +90,48 @@ body{
   background:#e60023;
 }
 
-/* 奖品飘落 */
-.prize-float{
+/* 奖品轮播图片 */
+.prize-item{
   position:absolute;
-  top:-40px;
-  width:80px;
+  top:-60px;
+  left:50%;
+  transform:translateX(-50%);
+  width:72px;
   opacity:0;
-  animation:floatDown 1.2s ease forwards;
+  animation:drop 1.8s ease-in-out forwards;
+  z-index:2;
 }
-@keyframes floatDown{
-  0%{transform:translateY(-40px);opacity:0}
-  30%{opacity:1}
-  100%{transform:translateY(40px);opacity:0}
+
+@keyframes drop{
+  0%{
+    transform:translate(-50%,-60px) scale(.9);
+    opacity:0;
+  }
+  30%{
+    opacity:1;
+  }
+  100%{
+    transform:translate(-50%,90px) scale(1);
+    opacity:0;
+  }
+}
+
+/* 最终停留 */
+.prize-final{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:92px;
+  z-index:4;
 }
 
 /* 按钮 */
 button{
   width:100%;
-  padding:14px;
+  padding:15px;
   border:none;
-  border-radius:14px;
+  border-radius:16px;
   font-size:16px;
   margin-top:12px;
 }
@@ -118,13 +141,13 @@ button{
   font-weight:600;
 }
 .secondary{
-  background:#fff5f7;
+  background:#fff3f6;
   color:#e60023;
 }
 button:disabled{opacity:.5}
 
 .link{
-  margin-top:12px;
+  margin-top:14px;
   font-size:12px;
   color:#999;
   text-align:center;
@@ -145,7 +168,7 @@ button:disabled{opacity:.5}
 
   <div class="card">
 
-    <!-- 中央圆 -->
+    <!-- 抽奖圆 -->
     <div class="hero">
       <div class="circle" id="circle">
         <div class="circle-progress">
@@ -173,21 +196,24 @@ const db = firebase.firestore();
 const CREATE_API = "https://createactivity-23p22ouguq-uc.a.run.app";
 const HELP_API   = "https://helpactivity-23p22ouguq-uc.a.run.app";
 
-/* 奖品图片映射（按你真实文件） */
+/* 奖品图片映射（真实文件） */
 const PRIZE_IMG = {
   "1888":"/1888.png",
   "588":"/588.png",
   "888":"/888.png",
-
   "66":"/hongbao.png",
   "88":"/hongbao.png",
   "388":"/hongbao.png",
-
   "iphone":"/iphone.png",
   "rice":"/dami.png",
   "oil":"/you.png",
   "shouji":"/shouji.png"
 };
+
+/* 轮播顺序（展示用） */
+const CAROUSEL = [
+  "1888","588","888","66","88","388","rice","oil","iphone"
+];
 
 /* deviceId */
 function genUUID(){
@@ -204,24 +230,51 @@ const btnCreate = document.getElementById("btnCreate");
 const btnHelp = document.getElementById("btnHelp");
 const shareLink = document.getElementById("shareLink");
 
-/* 奖品飘落 */
-function showPrize(prizeKey){
-  const img = document.createElement("img");
-  img.src = PRIZE_IMG[prizeKey] || "/hongbao.png";
-  img.className = "prize-float";
-  circle.appendChild(img);
+let carouselTimer = null;
 
-  setTimeout(()=>{
-    if(circle.contains(img)) circle.removeChild(img);
-  },1300);
+/* 核心：轮播 → 停在后端 prizeKey */
+function playCarousel(finalKey){
+  let index = 0;
+  let rounds = 0;
+  const maxRounds = 3;     // 转几圈
+  const interval = 650;   // 越大越慢
+
+  // 清理旧状态
+  circle.querySelectorAll(".prize-item,.prize-final").forEach(el=>el.remove());
+  clearInterval(carouselTimer);
+
+  carouselTimer = setInterval(()=>{
+    const img = document.createElement("img");
+    img.src = PRIZE_IMG[CAROUSEL[index]] || "/hongbao.png";
+    img.className = "prize-item";
+    circle.appendChild(img);
+
+    setTimeout(()=>img.remove(),1800);
+
+    index++;
+    if(index >= CAROUSEL.length){
+      index = 0;
+      rounds++;
+    }
+
+    if(rounds >= maxRounds){
+      clearInterval(carouselTimer);
+
+      setTimeout(()=>{
+        const finalImg = document.createElement("img");
+        finalImg.src = PRIZE_IMG[finalKey] || "/hongbao.png";
+        finalImg.className = "prize-final";
+        circle.appendChild(finalImg);
+      },900);
+    }
+  }, interval);
 }
 
 /* 监听进度 */
 function watch(activityId){
   db.collection("activities").doc(activityId).onSnapshot(snap=>{
     if(!snap.exists) return;
-    const d = snap.data();
-    progressInner.style.width = (d.progress||0)+"%";
+    progressInner.style.width = (snap.data().progress||0) + "%";
   });
 }
 
@@ -233,18 +286,18 @@ window.onload = async ()=>{
   });
   const d = await r.json();
   if(d.success && d.reused){
-    showPrize(d.prizeKey);
-    btnCreate.disabled=true;
-    btnCreate.innerText="已发起助力";
+    playCarousel(d.prizeKey);
+    btnCreate.disabled = true;
+    btnCreate.innerText = "已发起助力";
     watch(d.activityId);
     shareLink.innerText =
-      location.origin+location.pathname+"?from="+d.activityId;
+      location.origin + location.pathname + "?from=" + d.activityId;
   }
 };
 
 /* 发起助力 */
 btnCreate.onclick = async ()=>{
-  btnCreate.disabled=true;
+  btnCreate.disabled = true;
   const r = await fetch(CREATE_API,{
     method:"POST",
     headers:{ "x-device-id":deviceId }
@@ -252,40 +305,41 @@ btnCreate.onclick = async ()=>{
   const d = await r.json();
   if(!d.success) return;
 
-  showPrize(d.prizeKey);
+  playCarousel(d.prizeKey);
   watch(d.activityId);
   shareLink.innerText =
-    location.origin+location.pathname+"?from="+d.activityId;
+    location.origin + location.pathname + "?from=" + d.activityId;
 };
 
 /* 帮助好友助力 */
-const params=new URLSearchParams(location.search);
-const fromActivityId=params.get("from");
+const params = new URLSearchParams(location.search);
+const fromActivityId = params.get("from");
 if(!fromActivityId){
-  btnHelp.disabled=true;
-  btnHelp.innerText="请分享链接给好友助力";
+  btnHelp.disabled = true;
+  btnHelp.innerText = "请分享链接给好友助力";
 }else{
   watch(fromActivityId);
 }
-btnHelp.onclick=async()=>{
-  const r=await fetch(HELP_API,{
+btnHelp.onclick = async ()=>{
+  const r = await fetch(HELP_API,{
     method:"POST",
     headers:{ "x-device-id":deviceId },
-    body:JSON.stringify({activityId:fromActivityId})
+    body:JSON.stringify({ activityId: fromActivityId })
   });
-  const d=await r.json();
+  const d = await r.json();
   if(!d.success){
-    alert(d.error||"已助力");
-    btnHelp.disabled=true;
+    alert(d.error || "已助力");
+    btnHelp.disabled = true;
     return;
   }
-  btnHelp.disabled=true;
-  btnHelp.innerText="已成功助力 🎉";
+  btnHelp.disabled = true;
+  btnHelp.innerText = "已成功助力 🎉";
 };
 </script>
 
 </body>
 </html>
+
 
 
 
